@@ -94,27 +94,34 @@ public class FastTouch {
      * Erstellt FastTouch für ein JFrame/Window
      */
     public static FastTouch create(javax.swing.JFrame frame) {
+        System.out.println("[FastTouch] create() called");
+        
         // Warte bis Fenster sichtbar
+        System.out.println("[FastTouch] Waiting for frame to be visible...");
         while (!frame.isVisible()) {
             try { Thread.sleep(10); } catch (InterruptedException e) {}
         }
         
         String title = frame.getTitle();
+        System.out.println("[FastTouch] Frame title: " + title);
         if (title == null || title.isEmpty()) {
             title = "FastTouch";
         }
         
+        System.out.println("[FastTouch] Finding window handle...");
         long hwnd = findWindow(title);
         int retries = 0;
         while (hwnd == 0 && retries < 20) {
+            System.out.println("[FastTouch] Retry " + (retries + 1) + "/20 finding window...");
             try { Thread.sleep(50); } catch (InterruptedException e) {}
             hwnd = findWindow(title);
             retries++;
         }
         
         if (hwnd == 0) {
-            throw new RuntimeException("Fenster nicht gefunden: " + title);
+            throw new RuntimeException("[FastTouch] Fenster nicht gefunden: " + title);
         }
+        System.out.println("[FastTouch] Window handle found: " + hwnd);
         
         return new FastTouch(hwnd);
     }
@@ -122,8 +129,11 @@ public class FastTouch {
     private static native long findWindow(String title);
     
     private FastTouch(long hwnd) {
+        System.out.println("[FastTouch] Constructor called with hwnd=" + hwnd);
         this.hwnd = hwnd;
+        System.out.println("[FastTouch] Calling initNative...");
         initNative(hwnd);
+        System.out.println("[FastTouch] initNative completed");
     }
     
     /**

@@ -20,38 +20,48 @@ public class TouchDemo {
     private static Graphics2D canvasG;
     
     public static void main(String[] args) throws Exception {
+        System.out.println("[DEBUG] TouchDemo starting...");
+        
         // Fenster erstellen
+        System.out.println("[DEBUG] Creating JFrame...");
         JFrame frame = new JFrame("FastTouch Demo - Berühre den Bildschirm!");
         frame.setSize(800, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        System.out.println("[DEBUG] JFrame visible, title: " + frame.getTitle());
         
         // Zeichen-Canvas
+        System.out.println("[DEBUG] Creating canvas...");
         canvas = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
         canvasG = canvas.createGraphics();
         canvasG.setColor(Color.BLACK);
         canvasG.fillRect(0, 0, 800, 600);
         
         // Touch initialisieren
-        System.out.println("Initialisiere FastTouch...");
+        System.out.println("[DEBUG] Initialisiere FastTouch...");
         FastTouch touch = FastTouch.create(frame);
+        System.out.println("[DEBUG] FastTouch created successfully");
         
         // Prüfe Verfügbarkeit
+        System.out.println("[DEBUG] Checking touch availability...");
         boolean available = FastTouch.isTouchAvailable();
-        System.out.println("Touch verfügbar: " + available);
-        System.out.println("Max Touch Points: " + FastTouch.getMaxTouchPoints());
+        System.out.println("[DEBUG] Touch verfügbar: " + available);
+        System.out.println("[DEBUG] Max Touch Points: " + FastTouch.getMaxTouchPoints());
         
         if (!available) {
-            System.err.println("WARNUNG: Kein Touchscreen erkannt!");
+            System.err.println("[DEBUG] WARNUNG: Kein Touchscreen erkannt!");
+        } else {
+            System.out.println("[DEBUG] Touchscreen detected - ready for input");
         }
         
         // Touch-Listener für Malen
+        System.out.println("[DEBUG] Adding touch listener...");
         touch.addListener(point -> {
             // Farbe pro Touch-ID zuweisen
             touchColors.putIfAbsent(point.id, getColorForId(point.id));
             Color color = touchColors.get(point.id);
             
-            System.out.println(point); // Debug-Ausgabe
+            System.out.println("[TOUCH] " + point + " color=" + color);
             
             // Nur bei DOWN oder MOVE zeichnen
             if (point.state != FastTouch.State.UP) {
