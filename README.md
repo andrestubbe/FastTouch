@@ -70,9 +70,9 @@ public class TouchDemo {
 
 ### Build from Source
 
-```powershell
-# PowerShell
-.\compile.ps1
+```batch
+# Build
+compile.bat
 
 # Run demo
 cd out
