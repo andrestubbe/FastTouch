@@ -15,18 +15,34 @@ public class FastTouch {
         System.loadLibrary("FastTouch");
     }
     
-    /** Einzelner Touch-Point */
-    public static class TouchPoint {
+    /**
+     * Einzelner Touch-Point - immutable data class
+     */
+    public static final class TouchPoint {
         public final int id;           // Touch-ID (für Multi-Touch Tracking)
         public final int x;            // X-Koordinate
         public final int y;            // Y-Koordinate
-        public final int pressure;       // Pressure (0-255, oder 0/1 für binary)
+        public final int pressure;       // Pressure (0-255)
         public final int width;          // Contact width in pixels
         public final int height;         // Contact height in pixels
         public final long timestamp;     // Zeitstempel in ms
         public final State state;        // DOWN, MOVE, UP
         
-        public TouchPoint(int id, int x, int y, int pressure, int width, int height, long timestamp, State state) {
+        // Optional: für Stylus/Pen später
+        public final float orientation;   // Touch/pen orientation (degrees)
+        public final float tiltX;         // Tilt X angle (degrees)
+        public final float tiltY;         // Tilt Y angle (degrees)
+        public final int confidence;      // Confidence level (0-255)
+        
+        public TouchPoint(int id, int x, int y, int pressure, int width, int height, 
+                         long timestamp, State state) {
+            this(id, x, y, pressure, width, height, timestamp, state, 
+                 0f, 0f, 0f, 255);
+        }
+        
+        public TouchPoint(int id, int x, int y, int pressure, int width, int height, 
+                         long timestamp, State state,
+                         float orientation, float tiltX, float tiltY, int confidence) {
             this.id = id;
             this.x = x;
             this.y = y;
@@ -35,12 +51,16 @@ public class FastTouch {
             this.height = height;
             this.timestamp = timestamp;
             this.state = state;
+            this.orientation = orientation;
+            this.tiltX = tiltX;
+            this.tiltY = tiltY;
+            this.confidence = confidence;
         }
         
         @Override
         public String toString() {
-            return String.format("TouchPoint[id=%d, pos=(%d,%d), pressure=%d, %s]", 
-                id, x, y, pressure, state);
+            return String.format("TouchPoint[id=%d, pos=(%d,%d), pressure=%d, size=%dx%d, %s]", 
+                id, x, y, pressure, width, height, state);
         }
     }
     

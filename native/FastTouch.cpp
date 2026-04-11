@@ -1,6 +1,6 @@
 /**
  * FastTouch - Native Touchscreen Input for Java
- * Windows API Implementation
+ * Windows API Implementation (WM_POINTER - Windows 10/11)
  */
 
 #include <jni.h>
@@ -9,38 +9,23 @@
 
 #pragma comment(lib, "user32.lib")
 
-// Touch structures (in case older SDK)
-#ifndef TOUCHEVENTF_MOVE
-#define TOUCHEVENTF_MOVE 0x0001
-#define TOUCHEVENTF_DOWN 0x0002
-#define TOUCHEVENTF_UP 0x0004
-#define TOUCHEVENTF_PRIMARY 0x0010
-
-typedef struct _TOUCHINPUT {
-    LONG x;
-    LONG y;
-    HANDLE hSource;
-    DWORD dwID;
-    DWORD dwFlags;
-    DWORD dwMask;
-    DWORD dwTime;
-    ULONG_PTR dwExtraInfo;
-    DWORD cxContact;
-    DWORD cyContact;
-} TOUCHINPUT, *PTOUCHINPUT;
-
-#define TOUCHINPUTMASKF_CONTACTAREA 0x0004
-#define TOUCHINPUTMASKF_PRESSURE 0x0008
+// WM_POINTER is available on Windows 8+
+#ifndef WM_POINTERDOWN
+#define WM_POINTERDOWN 0x0246
+#define WM_POINTERUP 0x0247
+#define WM_POINTERUPDATE 0x0245
+#define GET_POINTERID_WPARAM(wParam) (LOWORD(wParam))
 #endif
 
-// Function pointers for runtime loading
-typedef BOOL (WINAPI *RegisterTouchWindowFunc)(HWND hwnd, ULONG ulFlags);
-typedef BOOL (WINAPI *GetTouchInputInfoFunc)(HANDLE hTouchInput, UINT cInputs, PTOUCHINPUT pInputs, int cbSize);
-typedef BOOL (WINAPI *CloseTouchInputHandleFunc)(HANDLE hTouchInput);
+// Function pointers for Pointer API (Windows 8+)
+typedef BOOL (WINAPI *GetPointerTouchInfoFunc)(UINT32 pointerId, POINTER_TOUCH_INFO* touchInfo);
+typedef BOOL (WINAPI *GetPointerInfoFunc)(UINT32 pointerId, POINTER_INFO* pointerInfo);
+typedef BOOL (WINAPI *GetPointerPenInfoFunc)(UINT32 pointerId, POINTER_PEN_INFO* penInfo);
+typedef BOOL (WINAPI *GetPointerFrameTouchInfoFunc)(UINT32 pointerId, UINT32* pointerCount, POINTER_TOUCH_INFO* touchInfo);
 
-static RegisterTouchWindowFunc pRegisterTouchWindow = nullptr;
-static GetTouchInputInfoFunc pGetTouchInputInfo = nullptr;
-static CloseTouchInputHandleFunc pCloseTouchInputHandle = nullptr;
+static GetPointerTouchInfoFunc pGetPointerTouchInfo = nullptr;
+static GetPointerInfoFunc pGetPointerInfo = nullptr;
+static GetPointerPenInfoFunc pGetPointerPenInfo = nullptr;
 
 // Global state
 static HWND g_hwnd = nullptr;
@@ -71,79 +56,61 @@ static WNDPROC g_origWndProc = nullptr;
 
 static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
-        case WM_TOUCH: {
-            UINT cInputs = LOWORD(wParam);
-            if (cInputs > 0 && pGetTouchInputInfo && pCloseTouchInputHandle) {
-                PTOUCHINPUT pInputs = new TOUCHINPUT[cInputs];
-                if (pGetTouchInputInfo((HANDLE)lParam, cInputs, pInputs, sizeof(TOUCHINPUT))) {
+        case WM_POINTERDOWN:
+        case WM_POINTERUPDATE:
+        case WM_POINTERUP: {
+            UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
+            
+            if (pGetPointerTouchInfo) {
+                POINTER_TOUCH_INFO touchInfo;
+                if (pGetPointerTouchInfo(pointerId, &touchInfo)) {
                     EnterCriticalSection(&g_touchLock);
                     
-                    // Mark all existing touches as MOVE initially
-                    for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
-                        if (g_touchPoints[i].active) {
-                            g_touchPoints[i].state = 1; // MOVE
+                    // Find or create touch slot
+                    int slot = -1;
+                    for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
+                        if (g_touchPoints[j].id == (int)pointerId && g_touchPoints[j].active) {
+                            slot = j;
+                            break;
                         }
                     }
-                    
-                    // Process new touch events
-                    for (UINT i = 0; i < cInputs && i < MAX_TOUCH_POINTS; i++) {
-                        TOUCHINPUT& ti = pInputs[i];
-                        
-                        // Find or create touch slot
-                        int slot = -1;
+                    if (slot == -1) {
                         for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
-                            if (g_touchPoints[j].id == (int)ti.dwID && g_touchPoints[j].active) {
+                            if (!g_touchPoints[j].active) {
                                 slot = j;
+                                g_touchPoints[j].active = true;
+                                g_touchPoints[j].id = pointerId;
                                 break;
                             }
                         }
-                        if (slot == -1) {
-                            for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
-                                if (!g_touchPoints[j].active) {
-                                    slot = j;
-                                    g_touchPoints[j].active = true;
-                                    g_touchPoints[j].id = ti.dwID;
-                                    break;
-                                }
-                            }
-                        }
+                    }
+                    
+                    if (slot != -1) {
+                        // Coordinates are already in screen space, convert to client
+                        POINT pt;
+                        pt.x = touchInfo.pointerInfo.ptPixelLocation.x;
+                        pt.y = touchInfo.pointerInfo.ptPixelLocation.y;
+                        ScreenToClient(g_hwnd, &pt);
                         
-                        if (slot != -1) {
-                            // Convert to client coordinates
-                            POINT pt;
-                            pt.x = ti.x / 100; // TOUCHINPUT uses 100ths of pixels
-                            pt.y = ti.y / 100;
-                            ScreenToClient(g_hwnd, &pt);
-                            
-                            g_touchPoints[slot].x = pt.x;
-                            g_touchPoints[slot].y = pt.y;
-                            g_touchPoints[slot].timestamp = GetTickCount();
-                            
-                            // Contact size
-                            if (ti.dwMask & TOUCHINPUTMASKF_CONTACTAREA) {
-                                g_touchPoints[slot].width = ti.cxContact / 100;
-                                g_touchPoints[slot].height = ti.cyContact / 100;
-                            } else {
-                                g_touchPoints[slot].width = 20;
-                                g_touchPoints[slot].height = 20;
-                            }
-                            
-                            // Pressure (simulated if not available)
-                            if (ti.dwMask & TOUCHINPUTMASKF_PRESSURE) {
-                                g_touchPoints[slot].pressure = 128; // Placeholder
-                            } else {
-                                g_touchPoints[slot].pressure = 128;
-                            }
-                            
-                            // State
-                            if (ti.dwFlags & TOUCHEVENTF_DOWN) {
-                                g_touchPoints[slot].state = 0; // DOWN
-                            } else if (ti.dwFlags & TOUCHEVENTF_UP) {
-                                g_touchPoints[slot].state = 2; // UP
-                                g_touchPoints[slot].active = false;
-                            } else {
-                                g_touchPoints[slot].state = 1; // MOVE
-                            }
+                        g_touchPoints[slot].x = pt.x;
+                        g_touchPoints[slot].y = pt.y;
+                        g_touchPoints[slot].timestamp = GetTickCount();
+                        
+                        // Contact size from WM_POINTER (always available in px)
+                        g_touchPoints[slot].width = touchInfo.rcContact.right - touchInfo.rcContact.left;
+                        g_touchPoints[slot].height = touchInfo.rcContact.bottom - touchInfo.rcContact.top;
+                        
+                        // Pressure (0-1024 from Windows API, we scale to 0-255)
+                        g_touchPoints[slot].pressure = (touchInfo.pressure * 255) / 1024;
+                        
+                        // State based on message
+                        if (msg == WM_POINTERDOWN) {
+                            g_touchPoints[slot].state = 0; // DOWN
+                        } else if (msg == WM_POINTERUP) {
+                            g_touchPoints[slot].state = 2; // UP
+                            g_touchPoints[slot].active = false;
+                        } else {
+                            g_touchPoints[slot].state = 1; // MOVE
                         }
                     }
                     
@@ -156,9 +123,7 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                     }
                     
                     LeaveCriticalSection(&g_touchLock);
-                    pCloseTouchInputHandle((HANDLE)lParam);
                 }
-                delete[] pInputs;
             }
             return 0;
         }
@@ -177,28 +142,24 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_initNative(JNIEnv*, jclass, jlon
     
     InitializeCriticalSection(&g_touchLock);
     
-    // Load touch functions dynamically
+    // Load WM_POINTER API (Windows 8+)
     HMODULE hUser32 = GetModuleHandleA("user32.dll");
     if (hUser32) {
-        pRegisterTouchWindow = (RegisterTouchWindowFunc)GetProcAddress(hUser32, "RegisterTouchWindow");
-        pGetTouchInputInfo = (GetTouchInputInfoFunc)GetProcAddress(hUser32, "GetTouchInputInfo");
-        pCloseTouchInputHandle = (CloseTouchInputHandleFunc)GetProcAddress(hUser32, "CloseTouchInputHandle");
+        pGetPointerTouchInfo = (GetPointerTouchInfoFunc)GetProcAddress(hUser32, "GetPointerTouchInfo");
+        pGetPointerInfo = (GetPointerInfoFunc)GetProcAddress(hUser32, "GetPointerInfo");
+        pGetPointerPenInfo = (GetPointerPenInfoFunc)GetProcAddress(hUser32, "GetPointerPenInfo");
     }
     
-    g_touchAvailable = (pRegisterTouchWindow != nullptr);
+    // WM_POINTER requires Windows 8+ (GetPointerTouchInfo)
+    g_touchAvailable = (pGetPointerTouchInfo != nullptr);
     
     if (g_touchAvailable && g_hwnd) {
-        // Register window for touch
-        if (pRegisterTouchWindow(g_hwnd, 0)) {
-            // Subclass window to intercept touch messages
-            g_origWndProc = (WNDPROC)SetWindowLongPtr(g_hwnd, GWLP_WNDPROC, (LONG_PTR)TouchWndProc);
-            g_initialized = true;
-            fprintf(stderr, "[FastTouch] Touch registered for window %p\n", g_hwnd);
-        } else {
-            fprintf(stderr, "[FastTouch] RegisterTouchWindow failed\n");
-        }
+        // Subclass window to intercept pointer messages
+        g_origWndProc = (WNDPROC)SetWindowLongPtr(g_hwnd, GWLP_WNDPROC, (LONG_PTR)TouchWndProc);
+        g_initialized = true;
+        fprintf(stderr, "[FastTouch] WM_POINTER registered for window %p\n", g_hwnd);
     } else {
-        fprintf(stderr, "[FastTouch] Touch not available (Windows 7+ required)\n");
+        fprintf(stderr, "[FastTouch] WM_POINTER not available (Windows 8+ required)\n");
     }
 }
 
