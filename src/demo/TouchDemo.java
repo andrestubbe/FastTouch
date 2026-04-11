@@ -29,11 +29,11 @@ public class TouchDemo {
         // Fenster erstellen
         log("Creating JFrame...");
         JFrame frame = new JFrame("FastTouch Demo");
-        frame.setSize(1000, 700);
+        frame.setSize(2000, 1400);  // 2x größer
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
         
-        // Links: Zeichen-Panel
+        // Links: Zeichen-Panel (2x größer)
         JPanel drawPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -43,29 +43,29 @@ public class TouchDemo {
                 }
             }
         };
-        drawPanel.setPreferredSize(new Dimension(800, 600));
+        drawPanel.setPreferredSize(new Dimension(1600, 1200));  // 2x größer
         drawPanel.setBackground(Color.BLACK);
         
-        // Rechts: Debug-Log
-        debugLog = new JTextArea(30, 30);
+        // Rechts: Debug-Log (2.5x größere Schrift, breiter)
+        debugLog = new JTextArea(30, 40);
         debugLog.setEditable(false);
-        debugLog.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        debugLog.setFont(new Font("Monospaced", Font.PLAIN, 25));  // 2.5x größer (10->25)
         debugLog.setBackground(Color.DARK_GRAY);
         debugLog.setForeground(Color.GREEN);
         JScrollPane scrollPane = new JScrollPane(debugLog);
-        scrollPane.setPreferredSize(new Dimension(200, 600));
+        scrollPane.setPreferredSize(new Dimension(500, 1200));  // 2.5x breiter
         
         frame.add(drawPanel, BorderLayout.CENTER);
         frame.add(scrollPane, BorderLayout.EAST);
         frame.setVisible(true);
         log("JFrame visible, title: '" + frame.getTitle() + "'");
         
-        // Zeichen-Canvas
+        // Zeichen-Canvas (2x größer)
         log("Creating canvas...");
-        canvas = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
+        canvas = new BufferedImage(1600, 1200, BufferedImage.TYPE_INT_ARGB);  // 2x größer
         canvasG = canvas.createGraphics();
         canvasG.setColor(Color.BLACK);
-        canvasG.fillRect(0, 0, 800, 600);
+        canvasG.fillRect(0, 0, 1600, 1200);
         
         // Touch initialisieren
         log("Initialisiere FastTouch...");

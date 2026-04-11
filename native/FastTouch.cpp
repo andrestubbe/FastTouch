@@ -60,71 +60,84 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
         case WM_POINTERUPDATE:
         case WM_POINTERUP: {
             UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
+            BOOL isTouch = (msg != WM_POINTERUP); // UP might not have touch info
             
-            if (pGetPointerTouchInfo) {
-                POINTER_TOUCH_INFO touchInfo;
-                if (pGetPointerTouchInfo(pointerId, &touchInfo)) {
-                    EnterCriticalSection(&g_touchLock);
-                    
-                    // Find or create touch slot
-                    int slot = -1;
-                    for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
-                        if (g_touchPoints[j].id == (int)pointerId && g_touchPoints[j].active) {
-                            slot = j;
-                            break;
-                        }
-                    }
-                    if (slot == -1) {
-                        for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
-                            if (!g_touchPoints[j].active) {
-                                slot = j;
-                                g_touchPoints[j].active = true;
-                                g_touchPoints[j].id = pointerId;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (slot != -1) {
-                        // Coordinates are already in screen space, convert to client
-                        POINT pt;
-                        pt.x = touchInfo.pointerInfo.ptPixelLocation.x;
-                        pt.y = touchInfo.pointerInfo.ptPixelLocation.y;
-                        ScreenToClient(g_hwnd, &pt);
-                        
-                        g_touchPoints[slot].x = pt.x;
-                        g_touchPoints[slot].y = pt.y;
-                        g_touchPoints[slot].timestamp = GetTickCount();
-                        
-                        // Contact size from WM_POINTER (always available in px)
-                        g_touchPoints[slot].width = touchInfo.rcContact.right - touchInfo.rcContact.left;
-                        g_touchPoints[slot].height = touchInfo.rcContact.bottom - touchInfo.rcContact.top;
-                        
-                        // Pressure (0-1024 from Windows API, we scale to 0-255)
-                        g_touchPoints[slot].pressure = (touchInfo.pressure * 255) / 1024;
-                        
-                        // State based on message
-                        if (msg == WM_POINTERDOWN) {
-                            g_touchPoints[slot].state = 0; // DOWN
-                        } else if (msg == WM_POINTERUP) {
-                            g_touchPoints[slot].state = 2; // UP
-                            g_touchPoints[slot].active = false;
-                        } else {
-                            g_touchPoints[slot].state = 1; // MOVE
-                        }
-                    }
-                    
-                    // Count active touches
-                    g_touchCount = 0;
-                    for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
-                        if (g_touchPoints[i].active || g_touchPoints[i].state == 2) {
-                            g_touchCount++;
-                        }
-                    }
-                    
-                    LeaveCriticalSection(&g_touchLock);
+            EnterCriticalSection(&g_touchLock);
+            
+            // Find existing touch slot
+            int slot = -1;
+            for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
+                if (g_touchPoints[j].id == (int)pointerId && g_touchPoints[j].active) {
+                    slot = j;
+                    break;
                 }
             }
+            
+            // Handle UP separately - pointer info may not be available
+            if (msg == WM_POINTERUP) {
+                if (slot != -1) {
+                    g_touchPoints[slot].state = 2; // UP
+                    g_touchPoints[slot].active = false;
+                    fprintf(stderr, "[FastTouch] Pointer UP id=%d\n", pointerId);
+                }
+                LeaveCriticalSection(&g_touchLock);
+                return 0;
+            }
+            
+            // For DOWN/UPDATE, get touch info
+            if (pGetPointerTouchInfo && slot != -1) {
+                POINTER_TOUCH_INFO touchInfo;
+                if (pGetPointerTouchInfo(pointerId, &touchInfo)) {
+                    // Coordinates - handle UI scaling (Windows gives physical pixels)
+                    POINT pt;
+                    pt.x = touchInfo.pointerInfo.ptPixelLocation.x;
+                    pt.y = touchInfo.pointerInfo.ptPixelLocation.y;
+                    ScreenToClient(g_hwnd, &pt);
+                    
+                    g_touchPoints[slot].x = pt.x;
+                    g_touchPoints[slot].y = pt.y;
+                    g_touchPoints[slot].timestamp = GetTickCount();
+                    
+                    // Contact size
+                    g_touchPoints[slot].width = touchInfo.rcContact.right - touchInfo.rcContact.left;
+                    g_touchPoints[slot].height = touchInfo.rcContact.bottom - touchInfo.rcContact.top;
+                    
+                    // Pressure (0-1024 from Windows API, we scale to 0-255)
+                    g_touchPoints[slot].pressure = (touchInfo.pressure * 255) / 1024;
+                    
+                    // State
+                    if (msg == WM_POINTERDOWN) {
+                        g_touchPoints[slot].state = 0; // DOWN
+                        fprintf(stderr, "[FastTouch] Pointer DOWN id=%d at (%d,%d)\n", 
+                                pointerId, pt.x, pt.y);
+                    } else {
+                        g_touchPoints[slot].state = 1; // MOVE
+                    }
+                }
+            } else if (msg == WM_POINTERDOWN && slot == -1) {
+                // Create new slot for DOWN
+                for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
+                    if (!g_touchPoints[j].active && g_touchPoints[j].state != 2) {
+                        slot = j;
+                        g_touchPoints[j].active = true;
+                        g_touchPoints[j].id = pointerId;
+                        g_touchPoints[j].state = 0; // DOWN
+                        g_touchPoints[j].timestamp = GetTickCount();
+                        fprintf(stderr, "[FastTouch] New slot %d for id=%d\n", slot, pointerId);
+                        break;
+                    }
+                }
+            }
+            
+            // Count active touches
+            g_touchCount = 0;
+            for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
+                if (g_touchPoints[i].active || g_touchPoints[i].state == 2) {
+                    g_touchCount++;
+                }
+            }
+            
+            LeaveCriticalSection(&g_touchLock);
             return 0;
         }
     }
@@ -172,12 +185,25 @@ JNIEXPORT jlong JNICALL Java_fasttouch_FastTouch_findWindow(JNIEnv* env, jclass,
 }
 
 JNIEXPORT void JNICALL Java_fasttouch_FastTouch_pollNative(JNIEnv*, jclass) {
-    // Process Windows message queue
+    // Process window messages
     MSG msg;
-    while (PeekMessage(&msg, g_hwnd, WM_TOUCH, WM_TOUCH, PM_REMOVE)) {
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    
+    // Check for stale touches (no update for > 500ms = UP)
+    EnterCriticalSection(&g_touchLock);
+    DWORD now = GetTickCount();
+    for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
+        if (g_touchPoints[i].active && (now - g_touchPoints[i].timestamp > 500)) {
+            // No update for 500ms - force UP
+            g_touchPoints[i].state = 2; // UP
+            g_touchPoints[i].active = false;
+            fprintf(stderr, "[FastTouch] Stale touch %d auto-released\n", g_touchPoints[i].id);
+        }
+    }
+    LeaveCriticalSection(&g_touchLock);
 }
 
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchCount(JNIEnv*, jclass) {
