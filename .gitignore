@@ -1,0 +1,23 @@
+# Build artifacts
+*.obj
+*.lib
+*.exp
+*.dll
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build output
+out/
+target/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp
+*.log

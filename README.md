@@ -72,7 +72,7 @@ public class TouchDemo {
 
 ```powershell
 # PowerShell
-.\build.ps1
+.\compile.ps1
 
 # Run demo
 cd out
