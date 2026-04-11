@@ -7,6 +7,8 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+![FastTouch Multi-Touch Demo](screenshot.png)
+
 > **🚧 WORK IN PROGRESS** - Native multi-touch touchscreen input via Windows API. See [TODO.md](TODO.md) for remaining features.
 
 FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard AWT/Swing. Get raw touch data including:

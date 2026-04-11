@@ -68,9 +68,20 @@ public class FastTouch {
     
     // Native Methoden
     private static native void initNative(long hwnd);
-    private static native void pollNative();
+    private static native void pollNative();  // DEPRECATED - use event-driven
     private static native int getTouchCount();
     private static native int getTouchId(int index);
+    
+    // NEW: Native callback entry point (called from C++ when touch event occurs)
+    private static void onNativeTouch(int id, int x, int y, int pressure, 
+                                       int width, int height, int state, long timestamp) {
+        TouchPoint point = new TouchPoint(id, x, y, pressure, width, height, 
+                                         timestamp, State.values()[state]);
+        // Notify all listeners directly on event
+        for (TouchListener listener : listeners) {
+            listener.onTouch(point);
+        }
+    }
     private static native int getTouchX(int index);
     private static native int getTouchY(int index);
     private static native int getTouchPressure(int index);
@@ -80,8 +91,9 @@ public class FastTouch {
     private static native long getTouchTimestamp(int index);
     
     private long hwnd;
-    private final List<TouchListener> listeners = new ArrayList<>();
+    private static final List<TouchListener> listeners = new ArrayList<>();  // static for native callback
     private volatile boolean running = false;
+    private final java.util.Set<Integer> firedUpEvents = new java.util.HashSet<>();  // Track already fired UP events
     
     /**
      * Interface für Touch-Event Listener
@@ -213,6 +225,21 @@ public class FastTouch {
             
             State state = stateCode == 0 ? State.DOWN : 
                          stateCode == 1 ? State.MOVE : State.UP;
+            
+            // UP-Events nur einmal feuern!
+            if (state == State.UP) {
+                if (firedUpEvents.contains(id)) {
+                    continue;  // Bereits gefeuert, überspringen
+                }
+                firedUpEvents.add(id);  // Markieren als gefeuert
+            } else if (state == State.DOWN) {
+                // Debug: DOWN event received
+                System.out.println("[FastTouch] Java DOWN received for id=" + id);
+                firedUpEvents.remove(id);  // UP-Tracking zurücksetzen
+            } else {
+                // Bei MOVE: UP-Tracking für diese ID zurücksetzen (falls nötig)
+                firedUpEvents.remove(id);
+            }
             
             TouchPoint point = new TouchPoint(id, x, y, pressure, width, height, timestamp, state);
             

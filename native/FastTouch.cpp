@@ -32,6 +32,11 @@ static HWND g_hwnd = nullptr;
 static bool g_initialized = false;
 static bool g_touchAvailable = false;
 
+// JNI callback state (for event-driven mode)
+static JavaVM* g_javaVM = nullptr;
+static jclass g_fastTouchClass = nullptr;
+static jmethodID g_onNativeTouchMethod = nullptr;
+
 // Touch point storage (simple ring buffer)
 #define MAX_TOUCH_POINTS 20
 
@@ -108,10 +113,15 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                     // State
                     if (msg == WM_POINTERDOWN) {
                         g_touchPoints[slot].state = 0; // DOWN
-                        fprintf(stderr, "[FastTouch] Pointer DOWN id=%d at (%d,%d)\n", 
-                                pointerId, pt.x, pt.y);
+                        fprintf(stderr, "[FastTouch] Pointer DOWN id=%d at (%d,%d) pressure=%d\n", 
+                                pointerId, pt.x, pt.y, g_touchPoints[slot].pressure);
                     } else {
                         g_touchPoints[slot].state = 1; // MOVE
+                        // Nur alle 30 frames ein MOVE log um Spam zu vermeiden
+                        static int moveCount = 0;
+                        if (++moveCount % 30 == 0) {
+                            fprintf(stderr, "[FastTouch] Pointer MOVE id=%d at (%d,%d)\n", pointerId, pt.x, pt.y);
+                        }
                     }
                 }
             } else if (msg == WM_POINTERDOWN && slot == -1) {
