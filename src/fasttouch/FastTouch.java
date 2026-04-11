@@ -96,30 +96,46 @@ public class FastTouch {
     public static FastTouch create(javax.swing.JFrame frame) {
         System.out.println("[FastTouch] create() called");
         
-        // Warte bis Fenster sichtbar
-        System.out.println("[FastTouch] Waiting for frame to be visible...");
-        while (!frame.isVisible()) {
+        // Warte bis Fenster sichtbar und Titel gesetzt ist
+        System.out.println("[FastTouch] Waiting for frame...");
+        int waitRetries = 0;
+        while ((!frame.isVisible() || frame.getTitle() == null || frame.getTitle().isEmpty()) && waitRetries < 50) {
             try { Thread.sleep(10); } catch (InterruptedException e) {}
+            waitRetries++;
         }
         
         String title = frame.getTitle();
-        System.out.println("[FastTouch] Frame title: " + title);
-        if (title == null || title.isEmpty()) {
-            title = "FastTouch";
-        }
+        System.out.println("[FastTouch] Frame title: '" + title + "' (length=" + (title != null ? title.length() : 0) + ")");
         
-        System.out.println("[FastTouch] Finding window handle...");
-        long hwnd = findWindow(title);
+        // Versuche verschiedene Titel-Varianten
+        long hwnd = 0;
+        String[] titleVariants = {
+            title,
+            title != null ? title.trim() : null,
+            "FastTouch Demo",
+            "FastTouch"
+        };
+        
         int retries = 0;
-        while (hwnd == 0 && retries < 20) {
-            System.out.println("[FastTouch] Retry " + (retries + 1) + "/20 finding window...");
-            try { Thread.sleep(50); } catch (InterruptedException e) {}
-            hwnd = findWindow(title);
-            retries++;
+        while (hwnd == 0 && retries < 30) {
+            for (String variant : titleVariants) {
+                if (variant != null && !variant.isEmpty()) {
+                    hwnd = findWindow(variant);
+                    if (hwnd != 0) {
+                        System.out.println("[FastTouch] Found with title: '" + variant + "'");
+                        break;
+                    }
+                }
+            }
+            if (hwnd == 0) {
+                System.out.println("[FastTouch] Retry " + (retries + 1) + "/30...");
+                try { Thread.sleep(100); } catch (InterruptedException e) {}
+                retries++;
+            }
         }
         
         if (hwnd == 0) {
-            throw new RuntimeException("[FastTouch] Fenster nicht gefunden: " + title);
+            throw new RuntimeException("[FastTouch] Fenster nicht gefunden. Titel war: '" + title + "'");
         }
         System.out.println("[FastTouch] Window handle found: " + hwnd);
         

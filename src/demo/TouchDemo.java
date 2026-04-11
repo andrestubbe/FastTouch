@@ -3,65 +3,96 @@ package demo;
 import fasttouch.FastTouch;
 import fasttouch.FastTouch.TouchPoint;
 
-import javax.swing.JFrame;
-import java.awt.Color;
-import java.awt.Graphics2D;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * FastTouch Demo - Zeichnet Touch-Points auf den Bildschirm
+ * MIT Debug-Log JTextArea
  */
 public class TouchDemo {
     
     private static final Map<Integer, Color> touchColors = new HashMap<>();
     private static BufferedImage canvas;
     private static Graphics2D canvasG;
+    private static JTextArea debugLog;
+    private static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
     
     public static void main(String[] args) throws Exception {
-        System.out.println("[DEBUG] TouchDemo starting...");
+        log("TouchDemo starting...");
         
         // Fenster erstellen
-        System.out.println("[DEBUG] Creating JFrame...");
-        JFrame frame = new JFrame("FastTouch Demo - Berühre den Bildschirm!");
-        frame.setSize(800, 600);
+        log("Creating JFrame...");
+        JFrame frame = new JFrame("FastTouch Demo");
+        frame.setSize(1000, 700);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+        
+        // Links: Zeichen-Panel
+        JPanel drawPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (canvas != null) {
+                    g.drawImage(canvas, 0, 0, null);
+                }
+            }
+        };
+        drawPanel.setPreferredSize(new Dimension(800, 600));
+        drawPanel.setBackground(Color.BLACK);
+        
+        // Rechts: Debug-Log
+        debugLog = new JTextArea(30, 30);
+        debugLog.setEditable(false);
+        debugLog.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        debugLog.setBackground(Color.DARK_GRAY);
+        debugLog.setForeground(Color.GREEN);
+        JScrollPane scrollPane = new JScrollPane(debugLog);
+        scrollPane.setPreferredSize(new Dimension(200, 600));
+        
+        frame.add(drawPanel, BorderLayout.CENTER);
+        frame.add(scrollPane, BorderLayout.EAST);
         frame.setVisible(true);
-        System.out.println("[DEBUG] JFrame visible, title: " + frame.getTitle());
+        log("JFrame visible, title: '" + frame.getTitle() + "'");
         
         // Zeichen-Canvas
-        System.out.println("[DEBUG] Creating canvas...");
+        log("Creating canvas...");
         canvas = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
         canvasG = canvas.createGraphics();
         canvasG.setColor(Color.BLACK);
         canvasG.fillRect(0, 0, 800, 600);
         
         // Touch initialisieren
-        System.out.println("[DEBUG] Initialisiere FastTouch...");
+        log("Initialisiere FastTouch...");
         FastTouch touch = FastTouch.create(frame);
-        System.out.println("[DEBUG] FastTouch created successfully");
+        log("FastTouch created successfully");
         
         // Prüfe Verfügbarkeit
-        System.out.println("[DEBUG] Checking touch availability...");
+        log("Checking touch availability...");
         boolean available = FastTouch.isTouchAvailable();
-        System.out.println("[DEBUG] Touch verfügbar: " + available);
-        System.out.println("[DEBUG] Max Touch Points: " + FastTouch.getMaxTouchPoints());
+        log("Touch verfügbar: " + available);
+        log("Max Touch Points: " + FastTouch.getMaxTouchPoints());
         
         if (!available) {
-            System.err.println("[DEBUG] WARNUNG: Kein Touchscreen erkannt!");
+            log("WARNUNG: Kein Touchscreen erkannt!");
         } else {
-            System.out.println("[DEBUG] Touchscreen detected - ready for input");
+            log("Touchscreen detected - ready for input");
         }
         
         // Touch-Listener für Malen
-        System.out.println("[DEBUG] Adding touch listener...");
+        log("Adding touch listener...");
         touch.addListener(point -> {
             // Farbe pro Touch-ID zuweisen
             touchColors.putIfAbsent(point.id, getColorForId(point.id));
             Color color = touchColors.get(point.id);
             
-            System.out.println("[TOUCH] " + point + " color=" + color);
+            log("[TOUCH] id=" + point.id + " pos=(" + point.x + "," + point.y + ") " + 
+                "pressure=" + point.pressure + " size=" + point.width + "x" + point.height + " " + point.state);
             
             // Nur bei DOWN oder MOVE zeichnen
             if (point.state != FastTouch.State.UP) {
@@ -71,8 +102,8 @@ public class TouchDemo {
                 int size = Math.max(10, point.pressure / 5);
                 canvasG.fillOval(point.x - size/2, point.y - size/2, size, size);
                 
-                // Frame neu zeichnen (einfache Version ohne FastGraphics)
-                frame.repaint();
+                // Panel neu zeichnen
+                drawPanel.repaint();
             }
             
             // Cleanup bei UP
@@ -83,8 +114,8 @@ public class TouchDemo {
         
         // Touch-Polling starten
         touch.start();
-        System.out.println("Touch-Polling gestartet. Berühre den Bildschirm!");
-        System.out.println("ESC zum Beenden");
+        log("Touch-Polling gestartet. Berühre den Bildschirm!");
+        log("ESC zum Beenden");
         
         // Tastatur-Listener für Beenden
         frame.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -97,15 +128,23 @@ public class TouchDemo {
             }
         });
         
-        // Einfaches Zeichnen mit Java2D (langsam aber funktioniert)
+        // Animation loop
         while (frame.isVisible()) {
-            java.awt.Graphics g = frame.getGraphics();
-            if (g != null) {
-                g.drawImage(canvas, 0, 0, null);
-                g.dispose();
-            }
+            drawPanel.repaint();
             Thread.sleep(16); // ~60 FPS
         }
+    }
+    
+    private static void log(String msg) {
+        String time = timeFormat.format(new Date());
+        String line = "[" + time + "] " + msg;
+        if (debugLog != null) {
+            SwingUtilities.invokeLater(() -> {
+                debugLog.append(line + "\n");
+                debugLog.setCaretPosition(debugLog.getDocument().getLength());
+            });
+        }
+        System.out.println(line);
     }
     
     private static Color getColorForId(int id) {
