@@ -69,13 +69,9 @@ public class TouchDemo {
 
 ## 📦 Installation
 
-<<<<<<< HEAD
-### Direct Download
+FastJava modules require **two** dependencies: the module itself, and `FastCore` (which handles the cross-platform native library extraction).
 
-Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
-=======
 ### Maven (JitPack)
-
 ```xml
 <repositories>
     <repository>
@@ -84,39 +80,37 @@ Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
     </repository>
 </repositories>
 
-<dependency>
-    <groupId>com.github.andrestubbe</groupId>
-    <artifactId>fasttouch</artifactId>
-    <version>v1.1.0</version>
-</dependency>
+<dependencies>
+    <!-- 1. The FastTouch Module -->
+    <dependency>
+        <groupId>io.github.andrestubbe</groupId>
+        <artifactId>fasttouch</artifactId>
+        <version>1.1.0</version>
+    </dependency>
+    
+    <!-- 2. FastCore (Required for native loading) -->
+    <dependency>
+        <groupId>io.github.andrestubbe</groupId>
+        <artifactId>fastcore</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+</dependencies>
 ```
 
-FastCore is automatically included as a transitive dependency.
-
 ### Gradle (JitPack)
-
 ```groovy
 repositories {
     maven { url 'https://jitpack.io' }
 }
+
 dependencies {
-    implementation 'com.github.andrestubbe:fasttouch:v1.1.0'
+    implementation 'io.github.andrestubbe:fasttouch:1.1.0'
+    implementation 'io.github.andrestubbe:fastcore:1.0.0'
 }
 ```
 
-### Direct Download
-
-- **fasttouch-v1.1.0.jar** — Main library with DLL
-- **fastcore-v1.0.0.jar** — [JNI loader](https://github.com/andrestubbe/FastCore/releases)
-
-```bash
-java -cp "fasttouch-v1.1.0.jar;fastcore-v1.0.0.jar" YourApp
-```
-
-### Build from Source
-
-See [COMPILE.md](COMPILE.md) for detailed build instructions.
->>>>>>> e0ded11 (v1.1.0: FastCore integration, Maven support, Blueprint structure, JitPack ready)
+### Direct Download / Local
+If you don't use Maven or Gradle, download the FatJAR from the [Releases](https://github.com/andrestubbe/FastTouch/releases) page. It comes pre-bundled with the native DLL and FastCore.
 
 ---
 
@@ -148,9 +142,6 @@ See [COMPILE.md](COMPILE.md) for detailed build instructions.
 
 ## Build from Source
 
-<<<<<<< HEAD
-See [COMPILE.md](COMPILE.md) for detailed build instructions.
-=======
 ### Prerequisites
 - Windows 10/11 with Touchscreen
 - Java JDK 17+
@@ -161,7 +152,6 @@ See [COMPILE.md](COMPILE.md) for detailed build instructions.
 compile.bat
 mvn clean package
 ```
->>>>>>> e0ded11 (v1.1.0: FastCore integration, Maven support, Blueprint structure, JitPack ready)
 
 See [COMPILE.md](COMPILE.md) for detailed instructions.
 
