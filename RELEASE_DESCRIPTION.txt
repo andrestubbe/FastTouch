@@ -1,0 +1,91 @@
+FastTouch 1.1.0
+Native Touchscreen Input for Java — Now with FastCore Integration
+
+What's New in 1.1.0
+===================
+- FastCore Integration — Unified JNI loader for cleaner code
+- Native DLL bundled — fasttouch.dll now included in JAR
+- JitPack Support — Ready for Maven/Gradle via JitPack
+- Blueprint Structure — Added examples/ folder with basic usage demo
+- Maven Support — Full pom.xml with proper dependencies
+
+Installation
+============
+#### Maven (JitPack)
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.andrestubbe</groupId>
+    <artifactId>fasttouch</artifactId>
+    <version>v1.1.0</version>
+</dependency>
+
+FastCore is automatically included as a transitive dependency.
+
+#### Gradle (JitPack)
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    implementation 'com.github.andrestubbe:fasttouch:v1.1.0'
+}
+
+#### Direct Download (Both JARs Required)
+- fasttouch-v1.1.0.jar — Main library with DLL
+- fastcore-v1.0.0.jar — JNI loader (https://github.com/andrestubbe/FastCore/releases)
+
+java -cp "fasttouch-v1.1.0.jar;fastcore-1.0.0.jar;." YourApp
+
+Quick Start
+===========
+import fasttouch.FastTouch;
+import javax.swing.JFrame;
+
+public class TouchDemo {
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("FastTouch Demo");
+        frame.setSize(800, 600);
+        frame.setVisible(true);
+        
+        // Initialize native touch input
+        FastTouch touch = FastTouch.create(frame);
+        
+        // Add touch listener
+        touch.addListener(point -> {
+            System.out.println("Touch " + point.id + 
+                " at (" + point.x + "," + point.y + ")" +
+                " pressure=" + point.pressure);
+        });
+        
+        // Start polling
+        touch.start();
+    }
+}
+
+Features
+========
+- Multi-Touch — Track 10+ fingers simultaneously
+- Pressure Sensitivity — 0-255 pressure levels
+- Contact Size — Width/Height in pixels
+- Low Latency — Native Windows WM_POINTER API
+- Event-Driven — Real-time touch callbacks
+
+Running Examples
+================
+cd examples/00-basic-usage
+mvn clean compile
+mvn exec:java
+
+Migration from 1.0.0
+====================
+No API changes required. The internal native library loading has been moved to FastCore.
+Direct download users: Add fastcore-v1.0.0.jar to your classpath.
+
+Part of the FastJava Ecosystem — Making the JVM faster.
+- FastCore — JNI loader
+- More at github.com/andrestubbe

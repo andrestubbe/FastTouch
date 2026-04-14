@@ -2,14 +2,15 @@
 
 **⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)]()
+[![JitPack](https://img.shields.io/badge/JitPack-available-brightgreen.svg)](https://jitpack.io/#andrestubbe/FastTouch)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ![FastTouch Multi-Touch Demo](screenshot.png)
 
-> **🚧 WORK IN PROGRESS** - Native multi-touch touchscreen input via Windows API. See [TODO.md](TODO.md) for remaining features.
+> **Native multi-touch touchscreen input** via Windows WM_POINTER API. Powered by FastCore.
 
 FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard AWT/Swing. Get raw touch data including:
 - **Multi-touch** — Track 10+ fingers simultaneously  
@@ -68,16 +69,48 @@ public class TouchDemo {
 
 ## 📦 Installation
 
+### Maven (JitPack)
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.andrestubbe</groupId>
+    <artifactId>fasttouch</artifactId>
+    <version>v1.1.0</version>
+</dependency>
+```
+
+FastCore is automatically included as a transitive dependency.
+
+### Gradle (JitPack)
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    implementation 'com.github.andrestubbe:fasttouch:v1.1.0'
+}
+```
+
+### Direct Download
+
+- **fasttouch-v1.1.0.jar** — Main library with DLL
+- **fastcore-v1.0.0.jar** — [JNI loader](https://github.com/andrestubbe/FastCore/releases)
+
+```bash
+java -cp "fasttouch-v1.1.0.jar;fastcore-v1.0.0.jar" YourApp
+```
+
 ### Build from Source
 
-```batch
-# Build
-compile.bat
-
-# Run demo
-cd out
-java -cp . -Djava.library.path=. demo.TouchDemo
-```
+See [COMPILE.md](COMPILE.md) for detailed build instructions.
 
 ---
 
@@ -87,12 +120,12 @@ java -cp . -Djava.library.path=. demo.TouchDemo
 
 | Method | Description | Status |
 |--------|-------------|--------|
-| `FastTouch.create(window)` | Initialize touch for window | 🚧 WIP |
-| `addListener(listener)` | Add touch event callback | 🚧 WIP |
-| `start()` | Begin touch polling | 🚧 WIP |
-| `stop()` | Stop touch polling | 🚧 WIP |
-| `isTouchAvailable()` | Check if touchscreen present | 🚧 WIP |
-| `getMaxTouchPoints()` | Get max simultaneous touches | 🚧 WIP |
+| `FastTouch.create(window)` | Initialize touch for window | ✅ Working |
+| `addListener(listener)` | Add touch event callback | ✅ Working |
+| `start()` | Begin touch polling | ✅ Working |
+| `stop()` | Stop touch polling | ✅ Working |
+| `isTouchAvailable()` | Check if touchscreen present | ✅ Working |
+| `getMaxTouchPoints()` | Get max simultaneous touches | ✅ Working |
 
 ### TouchPoint Fields
 
@@ -115,9 +148,12 @@ java -cp . -Djava.library.path=. demo.TouchDemo
 - Visual Studio 2022 (C++ workload)
 
 ### Build
-```powershell
-.\build.ps1
+```batch
+compile.bat
+mvn clean package
 ```
+
+See [COMPILE.md](COMPILE.md) for detailed instructions.
 
 ---
 
@@ -127,4 +163,28 @@ MIT License — See [LICENSE](LICENSE) for details.
 
 ---
 
-**FastTouch** — *Because touch matters.*
+## Project Structure
+
+```
+fasttouch/
+├── .github/workflows/          # CI/CD
+├── examples/00-basic-usage/     # Demo project
+│   ├── pom.xml
+│   └── src/main/java/fasttouch/TouchDemo.java
+├── native/
+│   ├── FastTouch.cpp          # Native implementation
+│   ├── FastTouch.h            # Header file
+│   └── FastTouch.def          # JNI exports (REQUIRED)
+├── src/main/java/fasttouch/   # Library source
+│   └── FastTouch.java
+├── compile.bat                # Native build script
+├── COMPILE.md                 # Build instructions
+├── pom.xml                    # Maven config
+└── README.md                  # This file
+```
+
+---
+
+**FastTouch** — *Part of the FastJava Ecosystem*  
+- [FastCore](https://github.com/andrestubbe/FastCore) — JNI loader
+- More at [github.com/andrestubbe](https://github.com/andrestubbe)

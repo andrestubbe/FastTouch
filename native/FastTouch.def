@@ -1,0 +1,16 @@
+LIBRARY fasttouch
+EXPORTS
+    Java_fasttouch_FastTouch_initNative
+    Java_fasttouch_FastTouch_findWindow
+    Java_fasttouch_FastTouch_pollNative
+    Java_fasttouch_FastTouch_getTouchCount
+    Java_fasttouch_FastTouch_getTouchId
+    Java_fasttouch_FastTouch_getTouchX
+    Java_fasttouch_FastTouch_getTouchY
+    Java_fasttouch_FastTouch_getTouchPressure
+    Java_fasttouch_FastTouch_getTouchWidth
+    Java_fasttouch_FastTouch_getTouchHeight
+    Java_fasttouch_FastTouch_getTouchState
+    Java_fasttouch_FastTouch_getTouchTimestamp
+    Java_fasttouch_FastTouch_isTouchAvailable
+    Java_fasttouch_FastTouch_getMaxTouchPoints
