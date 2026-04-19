@@ -3,6 +3,7 @@
 *.lib
 *.exp
 *.dll
+*.target/
 
 # IDE
 .idea/
@@ -21,3 +22,10 @@ Thumbs.db
 # Temp
 *.tmp
 *.log
+
+# Release files (local only)
+RELEASE.txt
+RELEASEV*.md
+
+# TODO files (local only)
+TODO.md

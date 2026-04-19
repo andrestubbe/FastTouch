@@ -14,3 +14,4 @@ EXPORTS
     Java_fasttouch_FastTouch_getTouchTimestamp
     Java_fasttouch_FastTouch_isTouchAvailable
     Java_fasttouch_FastTouch_getMaxTouchPoints
+    Java_fasttouch_FastTouch_setGestureEnabled
