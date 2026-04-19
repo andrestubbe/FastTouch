@@ -6,20 +6,20 @@ echo FastTouch Native Compiler
 echo =====================================================
 echo.
 
-REM Auto-detect JAVA_HOME
-if not defined JAVA_HOME (
-    for /f "tokens=*" %%a in ('where javac 2^>nul') do (
-        set "JAVA_HOME=%%~dpa.."
-    )
-)
+REM Hardcoded JDK path - adjust if needed
+set "JDK_PATH=C:\Program Files\Java\jdk-25"
 
-if not defined JAVA_HOME (
-    echo ERROR: JAVA_HOME not found. Please install JDK 17+.
+REM Verify JDK exists
+if not exist "%JDK_PATH%\include\jni.h" (
+    echo ERROR: JDK not found at %JDK_PATH%
+    echo.
+    echo Please install JDK 17+ to C:\Program Files\Java\jdk-XX
+    echo or edit this batch file and set JDK_PATH to your JDK location.
     pause
     exit /b 1
 )
 
-echo Using JAVA_HOME: %JAVA_HOME%
+echo Using JDK: %JDK_PATH%
 
 REM Auto-detect Visual Studio
 set "VS_PATH="
@@ -58,8 +58,8 @@ echo =====================================================
 cl /LD /Fe:build\fasttouch.dll ^
     native\FastTouch.cpp ^
     user32.lib ^
-    /I"%JAVA_HOME%\include" ^
-    /I"%JAVA_HOME%\include\win32" ^
+    /I"%JDK_PATH%\include" ^
+    /I"%JDK_PATH%\include\win32" ^
     /EHsc /std:c++17 /O2 /W3 ^
     /link /DEF:native\FastTouch.def
 
