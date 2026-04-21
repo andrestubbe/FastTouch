@@ -68,16 +68,9 @@ public class TouchDemo {
 
 ## 📦 Installation
 
-### Build from Source
+### Direct Download
 
-```batch
-# Build
-compile.bat
-
-# Run demo
-cd out
-java -cp . -Djava.library.path=. demo.TouchDemo
-```
+Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
 
 ---
 
@@ -107,17 +100,9 @@ java -cp . -Djava.library.path=. demo.TouchDemo
 
 ---
 
-## 🏗️ Build from Source
+## Build from Source
 
-### Prerequisites
-- Windows 10/11 with Touchscreen
-- Java JDK 17+
-- Visual Studio 2022 (C++ workload)
-
-### Build
-```powershell
-.\build.ps1
-```
+See [COMPILE.md](COMPILE.md) for detailed build instructions.
 
 ---
 
