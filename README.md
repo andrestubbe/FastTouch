@@ -2,14 +2,15 @@
 
 **⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)]()
+[![JitPack](https://img.shields.io/badge/JitPack-available-brightgreen.svg)](https://jitpack.io/#andrestubbe/FastTouch)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ![FastTouch Multi-Touch Demo](screenshot.png)
 
-> **🚧 WORK IN PROGRESS** - Native multi-touch touchscreen input via Windows API. See [TODO.md](TODO.md) for remaining features.
+> **Native multi-touch touchscreen input** via Windows WM_POINTER API. Powered by FastCore.
 
 FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard AWT/Swing. Get raw touch data including:
 - **Multi-touch** — Track 10+ fingers simultaneously  
@@ -68,9 +69,54 @@ public class TouchDemo {
 
 ## 📦 Installation
 
+<<<<<<< HEAD
 ### Direct Download
 
 Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
+=======
+### Maven (JitPack)
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.andrestubbe</groupId>
+    <artifactId>fasttouch</artifactId>
+    <version>v1.1.0</version>
+</dependency>
+```
+
+FastCore is automatically included as a transitive dependency.
+
+### Gradle (JitPack)
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    implementation 'com.github.andrestubbe:fasttouch:v1.1.0'
+}
+```
+
+### Direct Download
+
+- **fasttouch-v1.1.0.jar** — Main library with DLL
+- **fastcore-v1.0.0.jar** — [JNI loader](https://github.com/andrestubbe/FastCore/releases)
+
+```bash
+java -cp "fasttouch-v1.1.0.jar;fastcore-v1.0.0.jar" YourApp
+```
+
+### Build from Source
+
+See [COMPILE.md](COMPILE.md) for detailed build instructions.
+>>>>>>> e0ded11 (v1.1.0: FastCore integration, Maven support, Blueprint structure, JitPack ready)
 
 ---
 
@@ -80,12 +126,12 @@ Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
 
 | Method | Description | Status |
 |--------|-------------|--------|
-| `FastTouch.create(window)` | Initialize touch for window | 🚧 WIP |
-| `addListener(listener)` | Add touch event callback | 🚧 WIP |
-| `start()` | Begin touch polling | 🚧 WIP |
-| `stop()` | Stop touch polling | 🚧 WIP |
-| `isTouchAvailable()` | Check if touchscreen present | 🚧 WIP |
-| `getMaxTouchPoints()` | Get max simultaneous touches | 🚧 WIP |
+| `FastTouch.create(window)` | Initialize touch for window | ✅ Working |
+| `addListener(listener)` | Add touch event callback | ✅ Working |
+| `start()` | Begin touch polling | ✅ Working |
+| `stop()` | Stop touch polling | ✅ Working |
+| `isTouchAvailable()` | Check if touchscreen present | ✅ Working |
+| `getMaxTouchPoints()` | Get max simultaneous touches | ✅ Working |
 
 ### TouchPoint Fields
 
@@ -102,7 +148,22 @@ Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
 
 ## Build from Source
 
+<<<<<<< HEAD
 See [COMPILE.md](COMPILE.md) for detailed build instructions.
+=======
+### Prerequisites
+- Windows 10/11 with Touchscreen
+- Java JDK 17+
+- Visual Studio 2022 (C++ workload)
+
+### Build
+```batch
+compile.bat
+mvn clean package
+```
+>>>>>>> e0ded11 (v1.1.0: FastCore integration, Maven support, Blueprint structure, JitPack ready)
+
+See [COMPILE.md](COMPILE.md) for detailed instructions.
 
 ---
 
@@ -112,4 +173,28 @@ MIT License — See [LICENSE](LICENSE) for details.
 
 ---
 
-**FastTouch** — *Because touch matters.*
+## Project Structure
+
+```
+fasttouch/
+├── .github/workflows/          # CI/CD
+├── examples/00-basic-usage/     # Demo project
+│   ├── pom.xml
+│   └── src/main/java/fasttouch/TouchDemo.java
+├── native/
+│   ├── FastTouch.cpp          # Native implementation
+│   ├── FastTouch.h            # Header file
+│   └── FastTouch.def          # JNI exports (REQUIRED)
+├── src/main/java/fasttouch/   # Library source
+│   └── FastTouch.java
+├── compile.bat                # Native build script
+├── COMPILE.md                 # Build instructions
+├── pom.xml                    # Maven config
+└── README.md                  # This file
+```
+
+---
+
+**FastTouch** — *Part of the FastJava Ecosystem*  
+- [FastCore](https://github.com/andrestubbe/FastCore) — JNI loader
+- More at [github.com/andrestubbe](https://github.com/andrestubbe)
