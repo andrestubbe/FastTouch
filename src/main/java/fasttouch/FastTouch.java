@@ -1,5 +1,6 @@
 package fasttouch;
 
+import fastcore.FastCore;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
 public class FastTouch {
     
     static {
-        System.loadLibrary("FastTouch");
+        FastCore.loadLibrary("fasttouch");
     }
     
     /**
