@@ -142,18 +142,7 @@ If you don't use Maven or Gradle, download the FatJAR from the [Releases](https:
 
 ## Build from Source
 
-### Prerequisites
-- Windows 10/11 with Touchscreen
-- Java JDK 17+
-- Visual Studio 2022 (C++ workload)
-
-### Build
-```batch
-compile.bat
-mvn clean package
-```
-
-See [COMPILE.md](COMPILE.md) for detailed instructions.
+See [COMPILE.md](COMPILE.md) for detailed build instructions.
 
 ---
 
@@ -178,7 +167,6 @@ fasttouch/
 ├── src/main/java/fasttouch/   # Library source
 │   └── FastTouch.java
 ├── compile.bat                # Native build script
-├── COMPILE.md                 # Build instructions
 ├── pom.xml                    # Maven config
 └── README.md                  # This file
 ```
