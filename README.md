@@ -1,4 +1,4 @@
-# FastTouch — Native touchscreen input for Java
+# FastTouch — Native touchscreen input for Java [ALPHA]
 
 **⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
