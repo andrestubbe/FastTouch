@@ -6,12 +6,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.andrestubbe</groupId>
-    <artifactId>fasttouch-example</artifactId>
-    <version>1.0.0</version>
+    <artifactId>fasttouch</artifactId>
+    <version>v1.1.0</version>
     <packaging>jar</packaging>
 
-    <name>FastTouch Example</name>
-    <description>Basic usage demo for FastTouch</description>
+    <name>FastTouch</name>
+    <description>Native Touchscreen Input for Java — Multi-Touch via Windows WM_POINTER API</description>
+    <url>https://github.com/andrestubbe/FastTouch</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -27,14 +28,26 @@
     </repositories>
 
     <dependencies>
+        <!-- FastCore for native library loading -->
         <dependency>
             <groupId>com.github.andrestubbe</groupId>
-            <artifactId>fasttouch</artifactId>
-            <version>v1.1.0</version>
+            <artifactId>fastcore</artifactId>
+            <version>v1.0.0</version>
         </dependency>
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>build</directory>
+                <includes>
+                    <include>*.dll</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -45,11 +58,15 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.3.0</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
                 <configuration>
-                    <mainClass>fasttouch.TouchDemo</mainClass>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>
