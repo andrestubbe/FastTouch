@@ -1,12 +1,12 @@
-# FastTouch — Native touchscreen input for Java
-
-**⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
+# FastTouch v0.1.0 [ALPHA] — Native touchscreen input for Java
 
 [![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-available-brightgreen.svg)](https://jitpack.io/#andrestubbe/FastTouch)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe)
+
+**⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
 ![FastTouch Multi-Touch Demo](screenshot.png)
 
@@ -173,6 +173,18 @@ fasttouch/
 
 ---
 
-**FastTouch** — *Part of the FastJava Ecosystem*  
-- [FastCore](https://github.com/andrestubbe/FastCore) — JNI loader
-- More at [github.com/andrestubbe](https://github.com/andrestubbe)
+## License
+MIT License — See [LICENSE](LICENSE) file for details.
+
+---
+
+## Related Projects
+- [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader for Java
+- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — High-performance RawInput engine
+- [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI styling engine
+
+---
+**Part of the FastJava Ecosystem** — *Making the JVM faster.*
+
+
+
