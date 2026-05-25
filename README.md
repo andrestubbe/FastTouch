@@ -163,33 +163,6 @@ See [COMPILE.md](COMPILE.md) for detailed build instructions.
 
 ---
 
-## 📄 License
-
-MIT License — See [LICENSE](LICENSE) for details.
-
----
-
-## Project Structure
-
-```
-fasttouch/
-├── .github/workflows/          # CI/CD
-├── examples/00-basic-usage/     # Demo project
-│   ├── pom.xml
-│   └── src/main/java/fasttouch/TouchDemo.java
-├── native/
-│   ├── FastTouch.cpp          # Native implementation
-│   ├── FastTouch.h            # Header file
-│   └── FastTouch.def          # JNI exports (REQUIRED)
-├── src/main/java/fasttouch/   # Library source
-│   └── FastTouch.java
-├── compile.bat                # Native build script
-├── pom.xml                    # Maven config
-└── README.md                  # This file
-```
-
----
-
 ## License
 
 MIT License — See [LICENSE](LICENSE) file for details.
@@ -197,10 +170,12 @@ MIT License — See [LICENSE](LICENSE) file for details.
 ---
 
 ## Related Projects
-
-- [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader for Java
-- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — High-performance RawInput engine
-- [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI styling engine
+- [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader & JNI Utilities for Java
+- [FastMouse](https://github.com/andrestubbe/FastMouse) — High-Performance Native Mouse API for Java
+- [FastHotkey](https://github.com/andrestubbe/FastHotkey) — Low-Latency Global Hotkey API for Java
+- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — Native Windows RawInput API for Java
+- [FastKeylogger](https://github.com/andrestubbe/FastKeylogger) — Behavioral Typing Logic for Java
+- [FastStylus](https://github.com/andrestubbe/FastStylus) — Native Stylus/Pen Input for Java
 
 ---
 **Part of the FastJava Ecosystem** — *Making the JVM faster.*
