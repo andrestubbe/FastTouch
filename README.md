@@ -8,36 +8,34 @@
 
 **⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
-![FastTouch Multi-Touch Demo](screenshot.png)
-
 > **Native multi-touch touchscreen input** via Windows WM_POINTER API. Powered by FastCore.
 
-FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard AWT/Swing. Get raw touch data including:
-- **Multi-touch** — Track 10+ fingers simultaneously  
+FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard
+AWT/Swing. Get raw touch data including:
+
+- **Multi-touch** — Track 10+ fingers simultaneously
 - **Pressure sensitivity** — Variable touch force (0-255)
 - **Contact size** — Touch width/height in pixels
 - **Low latency** — Native Windows API, no JVM event queue delays
 
 **Java CANNOT do this.** AWT only provides mouse emulation for touch. FastTouch gives you the real thing.
 
----
-
-## 📦 Why FastTouch?
-
-| Feature | Java AWT/Swing | FastTouch (JNI) |
-|---------|---------------|-----------------|
-| Multi-Touch | ❌ No (mouse emulation only) | ✅ 10+ simultaneous points |
-| Pressure | ❌ No | ✅ 0-255 pressure levels |
-| Contact Size | ❌ No | ✅ Width/Height in pixels |
-| Raw Touch Events | ❌ No (synthesized mouse) | ✅ Native WM_TOUCH/WM_POINTER |
-| Latency | High (event queue) | **Native speed** |
+![FastTouch Multi-Touch Demo](screenshot.png)
 
 ---
 
-## 🚀 Quick Start
+## Table of Contents
+
+- [TODO](#features)
+- [License](#license)
+
+---
+
+## Quick Start
 
 ```java
 import fasttouch.FastTouch;
+
 import javax.swing.JFrame;
 
 public class TouchDemo {
@@ -45,21 +43,21 @@ public class TouchDemo {
         JFrame frame = new JFrame("FastTouch Demo");
         frame.setSize(800, 600);
         frame.setVisible(true);
-        
+
         // Initialize native touch input
         FastTouch touch = FastTouch.create(frame);
-        
+
         // Add touch listener
         touch.addListener(point -> {
-            System.out.println("Touch " + point.id + 
-                " at (" + point.x + "," + point.y + ")" +
-                " pressure=" + point.pressure +
-                " state=" + point.state);
+            System.out.println("Touch " + point.id +
+                    " at (" + point.x + "," + point.y + ")" +
+                    " pressure=" + point.pressure +
+                    " state=" + point.state);
         });
-        
+
         // Start polling
         touch.start();
-        
+
         // Your app runs here...
     }
 }
@@ -67,12 +65,27 @@ public class TouchDemo {
 
 ---
 
+## Why FastTouch?
+
+| Feature          | Java AWT/Swing              | FastTouch (JNI)              |
+|------------------|-----------------------------|------------------------------|
+| Multi-Touch      | ❌ No (mouse emulation only) | ✅ 10+ simultaneous points    |
+| Pressure         | ❌ No                        | ✅ 0-255 pressure levels      |
+| Contact Size     | ❌ No                        | ✅ Width/Height in pixels     |
+| Raw Touch Events | ❌ No (synthesized mouse)    | ✅ Native WM_TOUCH/WM_POINTER |
+| Latency          | High (event queue)          | **Native speed**             |
+
+---
+
 ## 📦 Installation
 
-FastJava modules require **two** dependencies: the module itself, and `FastCore` (which handles the cross-platform native library extraction).
+FastJava modules require **two** dependencies: the module itself, and `FastCore` (which handles the cross-platform
+native library extraction).
 
 ### Maven (JitPack)
+
 ```xml
+
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -81,23 +94,24 @@ FastJava modules require **two** dependencies: the module itself, and `FastCore`
 </repositories>
 
 <dependencies>
-    <!-- 1. The FastTouch Module -->
-    <dependency>
-        <groupId>io.github.andrestubbe</groupId>
-        <artifactId>fasttouch</artifactId>
-        <version>1.1.0</version>
-    </dependency>
-    
-    <!-- 2. FastCore (Required for native loading) -->
-    <dependency>
-        <groupId>io.github.andrestubbe</groupId>
-        <artifactId>fastcore</artifactId>
-        <version>1.0.0</version>
-    </dependency>
+<!-- 1. The FastTouch Module -->
+<dependency>
+    <groupId>io.github.andrestubbe</groupId>
+    <artifactId>fasttouch</artifactId>
+    <version>1.1.0</version>
+</dependency>
+
+<!-- 2. FastCore (Required for native loading) -->
+<dependency>
+    <groupId>io.github.andrestubbe</groupId>
+    <artifactId>fastcore</artifactId>
+    <version>1.0.0</version>
+</dependency>
 </dependencies>
 ```
 
 ### Gradle (JitPack)
+
 ```groovy
 repositories {
     maven { url 'https://jitpack.io' }
@@ -110,7 +124,10 @@ dependencies {
 ```
 
 ### Direct Download / Local
-If you don't use Maven or Gradle, download the FatJAR from the [Releases](https://github.com/andrestubbe/FastTouch/releases) page. It comes pre-bundled with the native DLL and FastCore.
+
+If you don't use Maven or Gradle, download the FatJAR from
+the [Releases](https://github.com/andrestubbe/FastTouch/releases) page. It comes pre-bundled with the native DLL and
+FastCore.
 
 ---
 
@@ -118,25 +135,25 @@ If you don't use Maven or Gradle, download the FatJAR from the [Releases](https:
 
 ### Core Methods
 
-| Method | Description | Status |
-|--------|-------------|--------|
-| `FastTouch.create(window)` | Initialize touch for window | ✅ Working |
-| `addListener(listener)` | Add touch event callback | ✅ Working |
-| `start()` | Begin touch polling | ✅ Working |
-| `stop()` | Stop touch polling | ✅ Working |
-| `isTouchAvailable()` | Check if touchscreen present | ✅ Working |
-| `getMaxTouchPoints()` | Get max simultaneous touches | ✅ Working |
+| Method                     | Description                  | Status    |
+|----------------------------|------------------------------|-----------|
+| `FastTouch.create(window)` | Initialize touch for window  | ✅ Working |
+| `addListener(listener)`    | Add touch event callback     | ✅ Working |
+| `start()`                  | Begin touch polling          | ✅ Working |
+| `stop()`                   | Stop touch polling           | ✅ Working |
+| `isTouchAvailable()`       | Check if touchscreen present | ✅ Working |
+| `getMaxTouchPoints()`      | Get max simultaneous touches | ✅ Working |
 
 ### TouchPoint Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | int | Touch ID (tracking) |
-| `x, y` | int | Screen coordinates |
-| `pressure` | int | 0-255 pressure level |
-| `width, height` | int | Contact size in pixels |
-| `state` | State | DOWN / MOVE / UP |
-| `timestamp` | long | Event time in ms |
+| Field           | Type  | Description            |
+|-----------------|-------|------------------------|
+| `id`            | int   | Touch ID (tracking)    |
+| `x, y`          | int   | Screen coordinates     |
+| `pressure`      | int   | 0-255 pressure level   |
+| `width, height` | int   | Contact size in pixels |
+| `state`         | State | DOWN / MOVE / UP       |
+| `timestamp`     | long  | Event time in ms       |
 
 ---
 
@@ -174,11 +191,13 @@ fasttouch/
 ---
 
 ## License
+
 MIT License — See [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Related Projects
+
 - [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader for Java
 - [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — High-performance RawInput engine
 - [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI styling engine
