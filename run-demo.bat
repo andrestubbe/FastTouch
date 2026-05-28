@@ -1,4 +1,6 @@
 @echo off
+chcp 65001 >nul
+
 echo ⚡ Building Main Project...
 call mvn -q clean package -DskipTests
 if %ERRORLEVEL% NEQ 0 ( pause & exit /b )
