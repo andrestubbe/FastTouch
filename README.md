@@ -24,7 +24,7 @@ AWT/Swing. Get raw touch data including:
 
 ---
 
-![FastTouch Multi-Touch Demo](screenshot.png)
+![FastTouch Multi-Touch Demo](docs/screenshot.png)
 
 ---
 
