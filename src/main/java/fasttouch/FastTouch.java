@@ -184,6 +184,8 @@ public class FastTouch {
     // Native Methoden
     private static native void initNative(long hwnd);
     private static native void pollNative();  // DEPRECATED - use event-driven
+    private static native void stopNative();
+    private static native void clearUpSlotById(int id);
     private static native int getTouchCount();
     private static native int getTouchId(int index);
     
@@ -206,9 +208,11 @@ public class FastTouch {
     private static native long getTouchTimestamp(int index);
     
     private long hwnd;
-    private static final List<TouchListener> listeners = new ArrayList<>();  // static for native callback
+    private static final java.util.concurrent.CopyOnWriteArrayList<TouchListener> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();  // static for native callback
     private volatile boolean running = false;
+    private Thread pollThread = null;
     private final java.util.Set<Integer> firedUpEvents = new java.util.HashSet<>();  // Track already fired UP events
+    private final java.util.Map<Integer, TouchPoint> lastFiredState = new java.util.HashMap<>(); // Filter MOVE spam
     
     /**
      * Creates a FastTouch instance for the given JFrame.
@@ -276,6 +280,37 @@ public class FastTouch {
         return new FastTouch(hwnd);
     }
     
+    /**
+     * Creates a FastTouch instance by natively searching for a Window Title.
+     * 
+     * <p>This method bypasses JFrame entirely and allows attaching the touch
+     * engine to any native Windows HWND, including the Windows Console or Windows Terminal.</p>
+     * 
+     * @param windowTitle the exact title of the window to hook into
+     * @return initialized FastTouch instance
+     * @throws RuntimeException if the native window cannot be found
+     */
+    public static FastTouch create(String windowTitle) {
+        System.out.println("[FastTouch] create(String) called for title: '" + windowTitle + "'");
+        long hwnd = 0;
+        int retries = 0;
+        
+        while (hwnd == 0 && retries < 30) {
+            hwnd = findWindow(windowTitle);
+            if (hwnd == 0) {
+                try { Thread.sleep(100); } catch (InterruptedException e) {}
+                retries++;
+            }
+        }
+        
+        if (hwnd == 0) {
+            throw new RuntimeException("[FastTouch] Window not found. Title was: '" + windowTitle + "'");
+        }
+        System.out.println("[FastTouch] Window handle found: " + hwnd);
+        
+        return new FastTouch(hwnd);
+    }
+    
     private static native long findWindow(String title);
     
     private FastTouch(long hwnd) {
@@ -328,19 +363,7 @@ public class FastTouch {
     public void start() {
         if (running) return;
         running = true;
-        
-        Thread pollThread = new Thread(() -> {
-            while (running) {
-                poll();
-                try {
-                    Thread.sleep(8); // ~120Hz Polling
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }, "FastTouch-Poll");
-        pollThread.setDaemon(true);
-        pollThread.start();
+        // Polling is now driven manually by the application render loop
     }
     
     /**
@@ -354,6 +377,13 @@ public class FastTouch {
      */
     public void stop() {
         running = false;
+        if (pollThread != null) {
+            try {
+                pollThread.join(500); // Wait for polling to cleanly finish
+            } catch (InterruptedException e) {}
+            pollThread = null;
+        }
+        stopNative();
     }
     
     /**
@@ -371,6 +401,13 @@ public class FastTouch {
         pollNative();
         
         int count = getTouchCount();
+        
+        if (count == 0) {
+            // Clean up old state when no fingers are touching to prevent memory leaks
+            firedUpEvents.clear();
+            lastFiredState.clear();
+        }
+        
         for (int i = 0; i < count; i++) {
             int id = getTouchId(i);
             int x = getTouchX(i);
@@ -390,9 +427,10 @@ public class FastTouch {
                     continue;  // Bereits gefeuert, überspringen
                 }
                 firedUpEvents.add(id);  // Markieren als gefeuert
+                lastFiredState.remove(id);
+                clearUpSlotById(id); // Notify C++ to release this specific slot
             } else if (state == State.DOWN) {
                 // Debug: DOWN event received
-                System.out.println("[FastTouch] Java DOWN received for id=" + id);
                 firedUpEvents.remove(id);  // UP-Tracking zurücksetzen
             } else {
                 // Bei MOVE: UP-Tracking für diese ID zurücksetzen (falls nötig)
@@ -400,6 +438,17 @@ public class FastTouch {
             }
             
             TouchPoint point = new TouchPoint(id, x, y, pressure, width, height, timestamp, state);
+            
+            // Filter identical MOVE events
+            if (state == State.MOVE) {
+                TouchPoint last = lastFiredState.get(id);
+                if (last != null && last.x == x && last.y == y && last.pressure == pressure) {
+                    continue; // Skip firing if nothing changed
+                }
+            }
+            if (state != State.UP) {
+                lastFiredState.put(id, point);
+            }
             
             // Benachrichtige alle Listener
             for (TouchListener listener : listeners) {
@@ -440,7 +489,7 @@ public class FastTouch {
     // GESTURE SUPPORT (Native Pinch/Rotate via WM_GESTURE)
     // ============================================================================
     
-    private static final List<GestureCallback> gestureCallbacks = new ArrayList<>();
+    private static final java.util.concurrent.CopyOnWriteArrayList<GestureCallback> gestureCallbacks = new java.util.concurrent.CopyOnWriteArrayList<>();
     
     /**
      * Callback interface for native gesture events (Pinch/Rotate).
@@ -453,6 +502,8 @@ public class FastTouch {
         void onPinch(float scale, float centerX, float centerY);
         /** Called when a rotate gesture is detected. */
         void onRotate(float angle, float centerX, float centerY);
+        /** Called when the current gesture ends. */
+        void onGestureEnd();
     }
     
     /**
@@ -506,6 +557,20 @@ public class FastTouch {
         for (GestureCallback cb : gestureCallbacks) {
             try {
                 cb.onRotate(angle, centerX, centerY);
+            } catch (Exception e) {
+                System.err.println("[FastTouch] Gesture callback error: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Called from native code when a gesture ends.
+     */
+    @SuppressWarnings("unused")
+    private static void onNativeGestureEnd() {
+        for (GestureCallback cb : gestureCallbacks) {
+            try {
+                cb.onGestureEnd();
             } catch (Exception e) {
                 System.err.println("[FastTouch] Gesture callback error: " + e.getMessage());
             }

@@ -1,6 +1,6 @@
 # FastTouch v0.1.0 [ALPHA] — Native touchscreen input for Java
 
-[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)]()
+[![Release](https://img.shields.io/badge/release-v0.1.0-blue.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-available-brightgreen.svg)](https://jitpack.io/#andrestubbe/FastTouch)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
@@ -102,7 +102,7 @@ native library extraction).
 <dependency>
     <groupId>io.github.andrestubbe</groupId>
     <artifactId>fasttouch</artifactId>
-    <version>1.1.0</version>
+    <version>0.1.0</version>
 </dependency>
 
 <!-- 2. FastCore (Required for native loading) -->
@@ -122,7 +122,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.andrestubbe:fasttouch:1.1.0'
+    implementation 'io.github.andrestubbe:fasttouch:0.1.0'
     implementation 'io.github.andrestubbe:fastcore:1.0.0'
 }
 ```
@@ -163,10 +163,11 @@ FastCore.
 
 ## Documentation
 
-* **[COMPILE.md](COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
+* **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
 * **[REFERENCE.md](REFERENCE.md)**: Full API descriptions, border configurations, and codepoint index.
-* **[PHILOSOPHIE.md](PHILOSOPHIE.md)**: The engineering rationale for zero-allocation performance.
-* **[ROADMAP.md](ROADMAP.md)**: Future milestones and planned features.
+* **[PHILOSOPHIE.md](docs/PHILOSOPHIE.md)**: The engineering rationale for zero-allocation performance.
+* **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
+* **[CHANGELOG.md](docs/CHANGELOG.md)**
 
 ---
 

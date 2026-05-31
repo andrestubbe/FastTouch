@@ -1,0 +1,16 @@
+# FastTouch - YouTube Declaration
+
+FastTouch is an ultra-fast, native-first multi-touch library for Java (JNI / Windows API).
+It provides 120Hz+ touch and gesture support directly into Swing applications, bypassing Java's built-in event queue for maximum performance and zero ghost-touches.
+
+Project: FastTouch
+Author: Andre Stubbe
+Ecosystem: FastJava
+
+Features:
+- Native Windows WM_POINTER and WM_GESTURE bindings
+- Zero Busy-Waiting, multi-threaded C++ backend
+- Supports up to 20 concurrent fingers with zero lag
+- High-Tech UI Pinch/Rotate Gesture Indication
+
+Feel free to use this in your YouTube video description!

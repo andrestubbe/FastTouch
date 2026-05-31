@@ -76,7 +76,7 @@
 #endif
 /** @brief Decode rotation angle from gesture argument (in radians) */
 #ifndef GID_ROTATE_ANGLE_FROM_ARGUMENT
-#define GID_ROTATE_ANGLE_FROM_ARGUMENT(arg) (float)((arg) / 1000.0)
+#define GID_ROTATE_ANGLE_FROM_ARGUMENT(arg) (float)((arg) / 65536.0)
 #endif
 
 /**
@@ -98,36 +98,34 @@ typedef struct {
 // POINTER API FUNCTION TYPEDEFS (Dynamically Loaded)
 // ============================================================================
 
-/** @brief Function pointer type for GetPointerTouchInfo (Windows 8+) */
-typedef BOOL (WINAPI *GetPointerTouchInfoFunc)(UINT32 pointerId, POINTER_TOUCH_INFO* touchInfo);
-/** @brief Function pointer type for GetPointerInfo (Windows 8+) */
-typedef BOOL (WINAPI *GetPointerInfoFunc)(UINT32 pointerId, POINTER_INFO* pointerInfo);
-/** @brief Function pointer type for GetPointerPenInfo (Windows 8+, for stylus) */
-typedef BOOL (WINAPI *GetPointerPenInfoFunc)(UINT32 pointerId, POINTER_PEN_INFO* penInfo);
-/** @brief Function pointer type for GetPointerFrameTouchInfo (multi-touch frames) */
-typedef BOOL (WINAPI *GetPointerFrameTouchInfoFunc)(UINT32 pointerId, UINT32* pointerCount, POINTER_TOUCH_INFO* touchInfo);
+typedef BOOL (WINAPI *GetPointerTypeFunc)(UINT32 pointerId, POINTER_INPUT_TYPE *pointerType);
+typedef BOOL (WINAPI *GetPointerTouchInfoFunc)(UINT32 pointerId, POINTER_TOUCH_INFO *touchInfo);
+typedef BOOL (WINAPI *GetPointerFrameTouchInfoFunc)(UINT32 pointerId, UINT32 *pointerCount, POINTER_TOUCH_INFO *touchInfo);
+typedef BOOL (WINAPI *GetGestureInfoFunc)(HGESTUREINFO hGestureInfo, FASTTOUCH_GESTUREINFO* pGestureInfo);
+typedef BOOL (WINAPI *SetGestureConfigFunc)(HWND hwnd, DWORD dwReserved, UINT cIDs, PGESTURECONFIG pGestureConfig, UINT cbSize);
 
 static GetPointerTouchInfoFunc pGetPointerTouchInfo = nullptr;  /**< Dynamically loaded GetPointerTouchInfo */
-static GetPointerInfoFunc pGetPointerInfo = nullptr;          /**< Dynamically loaded GetPointerInfo */
-static GetPointerPenInfoFunc pGetPointerPenInfo = nullptr;    /**< Dynamically loaded GetPointerPenInfo */
 
 // ============================================================================
 // GLOBAL STATE
 // ============================================================================
 
 static HWND g_hwnd = nullptr;           /**< Target window handle for touch input */
-static bool g_initialized = false;      /**< True after successful initialization */
+static bool g_initialized = false;      /**< True if subsystem initialized */
 static bool g_touchAvailable = false;   /**< True if WM_POINTER API is available */
-static bool g_gestureAvailable = false; /**< True if WM_GESTURE API is available */
+static bool g_gestureAvailable = false;
 static bool g_gestureEnabled = false;   /**< True if gesture recognition enabled */
 
 // Gesture function pointer
-typedef BOOL (WINAPI *GetGestureInfoFunc)(HWND hwnd, FASTTOUCH_GESTUREINFO* pGestureInfo);
 static GetGestureInfoFunc pGetGestureInfo = nullptr;
+static SetGestureConfigFunc pSetGestureConfig = nullptr;
 
 // JNI callback state (reserved for future event-driven mode)
-static JavaVM* g_javaVM = nullptr;              /**< Cached JavaVM pointer */
-static jclass g_fastTouchClass = nullptr;       /**< Cached FastTouch class reference */
+static JavaVM* g_javaVM = nullptr;      /**< Cached JavaVM for callbacks */
+static jclass g_fastTouchClass = nullptr; /**< Cached FastTouch class reference */
+static jmethodID g_onPinchMethod = nullptr;
+static jmethodID g_onRotateMethod = nullptr;
+static jmethodID g_onGestureEndMethod = nullptr;
 static jmethodID g_onNativeTouchMethod = nullptr; /**< Cached onNativeTouch method ID */
 
 /** @brief Maximum number of touch points supported simultaneously */
@@ -147,11 +145,13 @@ struct TouchPoint {
     int width;        /**< Contact width in pixels */
     int height;       /**< Contact height in pixels */
     long timestamp;   /**< Event timestamp (GetTickCount) */
-    int state;        /**< 0=DOWN, 1=MOVE, 2=UP */
-    bool active;      /**< True if finger currently touching */
+    int state;       // -1=NONE, 0=DOWN, 1=MOVE, 2=UP
+    bool active;
 };
 
-static TouchPoint g_touchPoints[MAX_TOUCH_POINTS];  /**< Ring buffer for touch point storage */
+static TouchPoint g_touchPoints[MAX_TOUCH_POINTS];
+static int g_activeSlots[MAX_TOUCH_POINTS]; // Snapshot of active slot indices
+static int g_snapshotCount = 0;             // Number of active slots in snapshot
 static int g_touchCount = 0;                        /**< Current number of active+ending touches */
 static CRITICAL_SECTION g_touchLock;                /**< Thread lock for touch state access */
 
@@ -178,9 +178,9 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     switch (msg) {
         case WM_POINTERDOWN:
         case WM_POINTERUPDATE:
-        case WM_POINTERUP: {
+        case WM_POINTERUP:
+        case 0x024C: { // WM_POINTERCAPTURECHANGED
             UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
-            BOOL isTouch = (msg != WM_POINTERUP); // UP might not have touch info
             
             EnterCriticalSection(&g_touchLock);
             
@@ -193,15 +193,29 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                 }
             }
             
+            // If it's a new touch point, allocate a slot before querying info
+            if (msg == WM_POINTERDOWN && slot == -1) {
+                for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
+                    if (!g_touchPoints[j].active && g_touchPoints[j].state != 2) {
+                        slot = j;
+                        g_touchPoints[j].active = true;
+                        g_touchPoints[j].id = pointerId;
+                        g_touchPoints[j].timestamp = GetTickCount();
+                        
+                        break;
+                    }
+                }
+            }
+            
             // Handle UP separately - pointer info may not be available
-            if (msg == WM_POINTERUP) {
+            if (msg == WM_POINTERUP || msg == 0x024C) {
                 if (slot != -1) {
                     g_touchPoints[slot].state = 2; // UP
                     g_touchPoints[slot].active = false;
-                    fprintf(stderr, "[FastTouch] Pointer UP id=%d\n", pointerId);
+                    
                 }
                 LeaveCriticalSection(&g_touchLock);
-                return 0;
+                break;
             }
             
             // For DOWN/UPDATE, get touch info
@@ -212,7 +226,7 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                     POINT pt;
                     pt.x = touchInfo.pointerInfo.ptPixelLocation.x;
                     pt.y = touchInfo.pointerInfo.ptPixelLocation.y;
-                    ScreenToClient(g_hwnd, &pt);
+                    ScreenToClient(hwnd, &pt);
                     
                     g_touchPoints[slot].x = pt.x;
                     g_touchPoints[slot].y = pt.y;
@@ -228,28 +242,22 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                     // State
                     if (msg == WM_POINTERDOWN) {
                         g_touchPoints[slot].state = 0; // DOWN
-                        fprintf(stderr, "[FastTouch] Pointer DOWN id=%d at (%d,%d) pressure=%d\n", 
-                                pointerId, pt.x, pt.y, g_touchPoints[slot].pressure);
+                        
                     } else {
                         g_touchPoints[slot].state = 1; // MOVE
-                        // Nur alle 30 frames ein MOVE log um Spam zu vermeiden
-                        static int moveCount = 0;
-                        if (++moveCount % 30 == 0) {
-                            fprintf(stderr, "[FastTouch] Pointer MOVE id=%d at (%d,%d)\n", pointerId, pt.x, pt.y);
+                        
+                        // Only log if position changed to avoid spam from pressure/keep-alive updates
+                        static int lastX[MAX_TOUCH_POINTS] = {0};
+                        static int lastY[MAX_TOUCH_POINTS] = {0};
+                        
+                        if (pt.x != lastX[slot] || pt.y != lastY[slot]) {
+                            static int moveCount = 0;
+                            if (++moveCount % 10 == 0) {
+                                
+                            }
+                            lastX[slot] = pt.x;
+                            lastY[slot] = pt.y;
                         }
-                    }
-                }
-            } else if (msg == WM_POINTERDOWN && slot == -1) {
-                // Create new slot for DOWN
-                for (int j = 0; j < MAX_TOUCH_POINTS; j++) {
-                    if (!g_touchPoints[j].active && g_touchPoints[j].state != 2) {
-                        slot = j;
-                        g_touchPoints[j].active = true;
-                        g_touchPoints[j].id = pointerId;
-                        g_touchPoints[j].state = 0; // DOWN
-                        g_touchPoints[j].timestamp = GetTickCount();
-                        fprintf(stderr, "[FastTouch] New slot %d for id=%d\n", slot, pointerId);
-                        break;
                     }
                 }
             }
@@ -263,38 +271,44 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             }
             
             LeaveCriticalSection(&g_touchLock);
-            return 0;
+            break;
         }
         
-        /**
-         * @brief WM_GESTURE handler for Pinch (Zoom) and Rotate gestures
-         * 
-         * @details Processes Windows 7+ gesture messages. Supports:
-         * - GID_ZOOM: Two-finger pinch/zoom (scale factor calculated from distance)
-         * - GID_ROTATE: Two-finger rotation (angle in degrees)
-         * 
-         * Gesture coordinates are converted from screen to client space.
-         * Events are forwarded to Java via JNI callbacks.
-         * 
-         * @note Requires gesture recognition to be enabled via setGestureEnabled()
-         * @see Java_fasttouch_FastTouch_setGestureEnabled
-         */
         case WM_GESTURE: {
             if (!g_gestureEnabled || !pGetGestureInfo) {
-                break; // Let DefWindowProc handle it
+                break;
             }
-            
-            FASTTOUCH_GESTUREINFO gi;
-            gi.cbSize = sizeof(gi);
-            
-            if (pGetGestureInfo(hwnd, &gi)) {
-                // Convert screen coordinates to client
-                POINT pt;
-                pt.x = gi.ptsLocation.x;
-                pt.y = gi.ptsLocation.y;
-                ScreenToClient(g_hwnd, &pt);
+            if (pGetGestureInfo) {
+                FASTTOUCH_GESTUREINFO gi;
+                ZeroMemory(&gi, sizeof(gi));
+                gi.cbSize = sizeof(FASTTOUCH_GESTUREINFO);
                 
-                switch (gi.dwID) {
+                if (pGetGestureInfo((HGESTUREINFO)lParam, &gi)) {
+                    // Check if gesture is ending
+                    if (gi.dwFlags & 0x00000004) { // GF_END
+                        if (g_javaVM && g_fastTouchClass && g_onGestureEndMethod) {
+                            JNIEnv* env = nullptr;
+                            bool attached = false;
+                            if (g_javaVM->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+                                g_javaVM->AttachCurrentThread((void**)&env, nullptr);
+                                attached = true;
+                            }
+                            if (env) {
+                                env->CallStaticVoidMethod(g_fastTouchClass, g_onGestureEndMethod);
+                                if (attached) {
+                                    g_javaVM->DetachCurrentThread();
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Extract coordinates
+                    POINT pt;
+                    pt.x = gi.ptsLocation.x;
+                    pt.y = gi.ptsLocation.y;
+                    ScreenToClient(hwnd, &pt);
+                    
+                    switch (gi.dwID) {
                     case GID_ZOOM: {
                         // Pinch/Zoom gesture - extract distance and normalize to scale
                         float distance = GID_ZOOM_DISTANCE_FROM_ARGUMENT(gi.ullArguments);
@@ -302,22 +316,25 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                         float scale = distance / 100.0f;
                         if (scale < 0.1f) scale = 0.1f; // Clamp minimum
                         
-                        fprintf(stderr, "[FastTouch] GESTURE PINCH scale=%.2f at (%d,%d)\n", 
-                                scale, pt.x, pt.y);
+                        
                         
                         // Call Java callback via JNI
-                        if (g_javaVM && g_fastTouchClass) {
-                            JNIEnv* env;
-                            if (g_javaVM->AttachCurrentThread((void**)&env, nullptr) == JNI_OK) {
-                                jmethodID method = env->GetStaticMethodID(g_fastTouchClass, 
-                                    "onNativePinch", "(FFF)V");
-                                if (method) {
-                                    env->CallStaticVoidMethod(g_fastTouchClass, method, 
-                                        scale, (float)pt.x, (float)pt.y);
+                        if (g_javaVM && g_fastTouchClass && g_onPinchMethod) {
+                            JNIEnv* env = nullptr;
+                            bool attached = false;
+                            if (g_javaVM->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+                                g_javaVM->AttachCurrentThread((void**)&env, nullptr);
+                                attached = true;
+                            }
+                            if (env) {
+                                env->CallStaticVoidMethod(g_fastTouchClass, g_onPinchMethod, 
+                                    scale, (float)pt.x, (float)pt.y);
+                                if (attached) {
+                                    g_javaVM->DetachCurrentThread();
                                 }
-                                g_javaVM->DetachCurrentThread();
                             }
                         }
+                        CloseGestureInfoHandle((HGESTUREINFO)lParam);
                         return 0;
                     }
                     
@@ -326,24 +343,30 @@ static LRESULT CALLBACK TouchWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                         float angleRad = GID_ROTATE_ANGLE_FROM_ARGUMENT(gi.ullArguments);
                         float angleDeg = angleRad * (180.0f / 3.14159265f);
                         
-                        fprintf(stderr, "[FastTouch] GESTURE ROTATE angle=%.1f° at (%d,%d)\n", 
-                                angleDeg, pt.x, pt.y);
+                        
                         
                         // Call Java callback via JNI
-                        if (g_javaVM && g_fastTouchClass) {
-                            JNIEnv* env;
-                            if (g_javaVM->AttachCurrentThread((void**)&env, nullptr) == JNI_OK) {
-                                jmethodID method = env->GetStaticMethodID(g_fastTouchClass, 
-                                    "onNativeRotate", "(FFF)V");
-                                if (method) {
-                                    env->CallStaticVoidMethod(g_fastTouchClass, method, 
-                                        angleDeg, (float)pt.x, (float)pt.y);
+                        if (g_javaVM && g_fastTouchClass && g_onRotateMethod) {
+                            JNIEnv* env = nullptr;
+                            bool attached = false;
+                            if (g_javaVM->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+                                g_javaVM->AttachCurrentThread((void**)&env, nullptr);
+                                attached = true;
+                            }
+                            if (env) {
+                                env->CallStaticVoidMethod(g_fastTouchClass, g_onRotateMethod, 
+                                    angleDeg, (float)pt.x, (float)pt.y);
+                                if (attached) {
+                                    g_javaVM->DetachCurrentThread();
                                 }
-                                g_javaVM->DetachCurrentThread();
                             }
                         }
+                        CloseGestureInfoHandle((HGESTUREINFO)lParam);
                         return 0;
                     }
+                    }
+                    // For unhandled gestures, we must close the handle
+                    CloseGestureInfoHandle((HGESTUREINFO)lParam);
                 }
             }
             break;
@@ -386,17 +409,18 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_initNative(JNIEnv* env, jclass c
     // Cache FastTouch class reference
     g_fastTouchClass = (jclass)env->NewGlobalRef(clazz);
     
+    g_onPinchMethod = env->GetStaticMethodID(g_fastTouchClass, "onNativePinch", "(FFF)V");
+    g_onRotateMethod = env->GetStaticMethodID(g_fastTouchClass, "onNativeRotate", "(FFF)V");
+    g_onGestureEndMethod = env->GetStaticMethodID(g_fastTouchClass, "onNativeGestureEnd", "()V");
+    
     InitializeCriticalSection(&g_touchLock);
     
-    // Load WM_POINTER API (Windows 8+)
-    HMODULE hUser32 = GetModuleHandleA("user32.dll");
-    if (hUser32) {
-        pGetPointerTouchInfo = (GetPointerTouchInfoFunc)GetProcAddress(hUser32, "GetPointerTouchInfo");
-        pGetPointerInfo = (GetPointerInfoFunc)GetProcAddress(hUser32, "GetPointerInfo");
-        pGetPointerPenInfo = (GetPointerPenInfoFunc)GetProcAddress(hUser32, "GetPointerPenInfo");
-        
-        // Load WM_GESTURE API (Windows 7+)
-        pGetGestureInfo = (GetGestureInfoFunc)GetProcAddress(hUser32, "GetGestureInfo");
+    // Load Windows 8 Pointer APIs dynamically
+    HMODULE user32 = GetModuleHandleA("user32.dll");
+    if (user32) {
+        pGetPointerTouchInfo = (GetPointerTouchInfoFunc)GetProcAddress(user32, "GetPointerTouchInfo");
+        pGetGestureInfo = (GetGestureInfoFunc)GetProcAddress(user32, "GetGestureInfo");
+        pSetGestureConfig = (SetGestureConfigFunc)GetProcAddress(user32, "SetGestureConfig");
     }
     
     // WM_POINTER requires Windows 8+ (GetPointerTouchInfo)
@@ -409,13 +433,13 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_initNative(JNIEnv* env, jclass c
         // Subclass window to intercept pointer messages
         g_origWndProc = (WNDPROC)SetWindowLongPtr(g_hwnd, GWLP_WNDPROC, (LONG_PTR)TouchWndProc);
         g_initialized = true;
-        fprintf(stderr, "[FastTouch] WM_POINTER registered for window %p\n", g_hwnd);
+        
         
         if (g_gestureAvailable) {
-            fprintf(stderr, "[FastTouch] WM_GESTURE available (Pinch/Rotate support)\n");
+            
         }
     } else {
-        fprintf(stderr, "[FastTouch] WM_POINTER not available (Windows 8+ required)\n");
+        
     }
 }
 
@@ -430,11 +454,36 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_initNative(JNIEnv* env, jclass c
  * @note Top-level windows only (FindWindowA with null class)
  */
 JNIEXPORT jlong JNICALL Java_fasttouch_FastTouch_findWindow(JNIEnv* env, jclass, jstring title) {
-    const char* str = nullptr;
-    if (title) str = env->GetStringUTFChars(title, nullptr);
-    HWND hwnd = FindWindowA(nullptr, str);
-    if (title && str) env->ReleaseStringUTFChars(title, str);
+    const jchar* str = nullptr;
+    if (title) str = env->GetStringChars(title, nullptr);
+    HWND hwnd = FindWindowW(nullptr, (LPCWSTR)str);
+    if (title && str) env->ReleaseStringChars(title, str);
     return (jlong)hwnd;
+}
+
+JNIEXPORT void JNICALL Java_fasttouch_FastTouch_stopNative(JNIEnv* env, jclass clazz) {
+    if (g_hwnd && g_origWndProc) {
+        SetWindowLongPtr(g_hwnd, GWLP_WNDPROC, (LONG_PTR)g_origWndProc);
+        g_origWndProc = nullptr;
+    }
+    if (g_fastTouchClass) {
+        env->DeleteGlobalRef(g_fastTouchClass);
+        g_fastTouchClass = nullptr;
+    }
+    g_initialized = false;
+}
+
+JNIEXPORT void JNICALL Java_fasttouch_FastTouch_clearUpSlotById(JNIEnv*, jclass, jint id) {
+    EnterCriticalSection(&g_touchLock);
+    for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
+        // Reset slot only if it matches the ID and is already marked as UP
+        if (g_touchPoints[i].id == id && !g_touchPoints[i].active && g_touchPoints[i].state == 2) {
+            ZeroMemory(&g_touchPoints[i], sizeof(TouchPoint));
+            g_touchPoints[i].state = -1; // Fully clear
+            break;
+        }
+    }
+    LeaveCriticalSection(&g_touchLock);
 }
 
 /**
@@ -463,7 +512,7 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_pollNative(JNIEnv*, jclass) {
             // No update for 500ms - force UP
             g_touchPoints[i].state = 2; // UP
             g_touchPoints[i].active = false;
-            fprintf(stderr, "[FastTouch] Stale touch %d auto-released\n", g_touchPoints[i].id);
+            
         }
     }
     LeaveCriticalSection(&g_touchLock);
@@ -476,19 +525,29 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_pollNative(JNIEnv*, jclass) {
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchCount(JNIEnv*, jclass) {
     EnterCriticalSection(&g_touchLock);
-    int count = g_touchCount;
+    g_snapshotCount = 0;
+    for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
+        if (g_touchPoints[i].active || g_touchPoints[i].state == 2) {
+            g_activeSlots[g_snapshotCount++] = i;
+        }
+    }
+    int count = g_snapshotCount;
     LeaveCriticalSection(&g_touchLock);
     return count;
 }
 
 /**
  * @brief Gets the touch ID at the specified index
- * @param index Touch point index (0 to MAX_TOUCH_POINTS-1)
+ * @param index Touch point index (0 to g_snapshotCount-1)
  * @return Touch ID (0-9), or -1 if index invalid
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchId(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return -1;
-    return g_touchPoints[index].id;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].id : -1;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -498,7 +557,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchId(JNIEnv*, jclass, jint
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchX(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 0;
-    return g_touchPoints[index].x;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].x : 0;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -508,7 +571,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchX(JNIEnv*, jclass, jint 
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchY(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 0;
-    return g_touchPoints[index].y;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].y : 0;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -518,7 +585,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchY(JNIEnv*, jclass, jint 
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchPressure(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 0;
-    return g_touchPoints[index].pressure;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].pressure : 0;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -528,7 +599,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchPressure(JNIEnv*, jclass
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchWidth(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 0;
-    return g_touchPoints[index].width;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].width : 0;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -538,7 +613,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchWidth(JNIEnv*, jclass, j
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchHeight(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 0;
-    return g_touchPoints[index].height;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].height : 0;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -548,7 +627,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchHeight(JNIEnv*, jclass, 
  */
 JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchState(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 2; // UP
-    return g_touchPoints[index].state;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jint val = realIndex != -1 ? g_touchPoints[realIndex].state : 2;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -558,7 +641,11 @@ JNIEXPORT jint JNICALL Java_fasttouch_FastTouch_getTouchState(JNIEnv*, jclass, j
  */
 JNIEXPORT jlong JNICALL Java_fasttouch_FastTouch_getTouchTimestamp(JNIEnv*, jclass, jint index) {
     if (index < 0 || index >= MAX_TOUCH_POINTS) return 0;
-    return g_touchPoints[index].timestamp;
+    EnterCriticalSection(&g_touchLock);
+    int realIndex = index < g_snapshotCount ? g_activeSlots[index] : -1;
+    jlong val = realIndex != -1 ? g_touchPoints[realIndex].timestamp : 0;
+    LeaveCriticalSection(&g_touchLock);
+    return val;
 }
 
 /**
@@ -592,12 +679,13 @@ JNIEXPORT void JNICALL Java_fasttouch_FastTouch_setGestureEnabled(JNIEnv*, jobje
     g_gestureEnabled = (enable == JNI_TRUE);
     
     if (g_gestureEnabled && g_gestureAvailable) {
-        fprintf(stderr, "[FastTouch] Gesture recognition ENABLED\n");
+        
     } else if (g_gestureEnabled && !g_gestureAvailable) {
-        fprintf(stderr, "[FastTouch] WARNING: Gesture recognition requested but WM_GESTURE not available\n");
+        
     } else {
-        fprintf(stderr, "[FastTouch] Gesture recognition DISABLED\n");
+        
     }
 }
 
 } // extern "C"
+

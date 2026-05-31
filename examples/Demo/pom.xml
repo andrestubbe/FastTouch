@@ -21,6 +21,10 @@
 
     <repositories>
         <repository>
+            <id>andrestubbe</id>
+            <url>https://github.com/andrestubbe/mvn-repo/raw/main/</url>
+        </repository>
+        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
@@ -29,8 +33,23 @@
     <dependencies>
         <dependency>
             <groupId>com.github.andrestubbe</groupId>
+            <artifactId>fasttheme</artifactId>
+            <version>0.1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.github.andrestubbe</groupId>
+                    <artifactId>fastanimation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.andrestubbe</groupId>
+                    <artifactId>fasttween</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.andrestubbe</groupId>
             <artifactId>fasttouch</artifactId>
-            <version>v1.1.0</version>
+            <version>v0.1.0</version>
         </dependency>
     </dependencies>
 
