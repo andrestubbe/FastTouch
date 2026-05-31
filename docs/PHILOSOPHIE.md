@@ -1,29 +1,29 @@
-# The Philosophy of FastXXX
+# The Philosophy of FastTouch
 
 > [!IMPORTANT]
 > **"Keine Kopien. Niemals. Kritischer JNI-Pfad. Native-First Performance."**
 
-FastXXX is built on the principle that modern Java applications require **native-first** acceleration for performance-critical operations that the standard JVM APIs don't fully optimize.
+FastTouch is built on the fundamental principle that modern Java UI applications require **native-first** acceleration for input processing. The standard JVM AWT/Swing abstractions are excellent for cross-platform compatibility, but they completely fail at exposing modern hardware capabilities like Multi-Touch, pressure sensitivity, and low-latency pointer tracking.
 
-## Core Tenets
+## Core Tenets of FastTouch
 
-1.  **Native-First Execution**
-    Bypass standard Java layers to reach the physical limits of the hardware using hand-tuned C++ and SIMD intrinsics.
+### 1. Hardware-Direct Input (Bypassing AWT)
+Java AWT translates touch events into synthesized mouse events (`MOUSE_PRESSED`, `MOUSE_DRAGGED`). This causes lag, drops multi-touch data (since a mouse only has one cursor), and completely loses pressure and contact size information. FastTouch injects a native `GWLP_WNDPROC` hook directly into the Windows Message Loop, intercepting `WM_POINTER` events the exact millisecond they are fired by the touchscreen digitizer.
 
-2.  **Zero-Copy JNI Architecture**
-    Minimize JNI transition costs by using direct memory access patterns and avoiding implicit memory copies between the JVM and the native layer.
+### 2. Event-Driven, Not Polled
+Polling for input burns CPU cycles and creates jitter. FastTouch is entirely event-driven from the C++ layer. The JNI boundary is only crossed when a physical finger actually moves or touches the screen, utilizing a highly optimized asynchronous JNI callback mechanism (`onNativeTouch`).
 
-3.  **Deterministic Latency**
-    Eliminate variance caused by JIT warm-up or garbage collection stalls in critical hot-paths.
+### 3. Zero-Bottleneck Architecture
+The native code tracks the state of up to 10 simultaneous fingers using a pre-allocated static C++ array. No memory is dynamically allocated (`malloc`/`new`) inside the native hot-path. 
 
-4.  **Hardware-Aware Optimization**
-    Leverage modern CPU features (AVX, SSE, NEON) to process data at hardware-native speeds.
+### 4. Deterministic Latency
+By avoiding garbage collection triggers and object instantiation within the C++ layer, FastTouch guarantees deterministic latency. The time from your finger physically touching the screen to the Java `TouchListener` firing is bounded strictly by the OS and the JNI crossing time (usually under 1ms).
 
-5.  **Blueprint Consistency**
-    As part of the **FastJava** ecosystem, FastXXX adheres to a standardized architecture:
-    *   **Native Backend**: Direct C++ implementation.
-    *   **Unified Loading**: Powered by `FastCore`.
-    *   **Premium Quality**: Built for high-performance systems and autonomous agents.
+### 5. Blueprint Consistency
+As part of the **FastJava** ecosystem, FastTouch adheres to a standardized architecture:
+*   **Native Backend**: Direct C++ implementation (Win32 API).
+*   **Unified Loading**: Native DLL extraction and loading powered safely by `FastCore`.
+*   **Premium Quality**: Built for high-performance systems where every frame counts.
 
 ---
-**⚡ FastXXX — Powering the next generation of Native Java.**
+**⚡ FastTouch — Unlocking the physical limits of touch hardware for the JVM.**
