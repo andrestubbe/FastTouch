@@ -30,8 +30,13 @@ AWT/Swing. Get raw touch data including:
 
 ## Table of Contents
 
-- [TODO](#features)
+- [Quick Start](#quick-start)
+- [Why FastTouch?](#why-fasttouch)
+- [Installation](#-installation)
+- [API Reference](#-api-reference)
+- [Documentation](#documentation)
 - [License](#license)
+- [Related Projects](#related-projects)
 
 ---
 
