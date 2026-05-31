@@ -138,15 +138,15 @@ Download the latest JAR directly to add it to your classpath:
 
 ### FastTouch Core Methods
 
-| Method                     | Description                  | Status    |
-|----------------------------|------------------------------|-----------|
-| `FastTouch.create(window)` | Initialize touch for window  | ✅ Working |
-| `addListener(listener)`    | Add touch event callback     | ✅ Working |
-| `removeListener(listener)` | Remove touch event callback  | ✅ Working |
-| `start()`                  | Begin touch processing       | ✅ Working |
-| `stop()`                   | Stop touch processing        | ✅ Working |
-| `isTouchAvailable()`       | Check if touchscreen present | ✅ Working |
-| `getMaxTouchPoints()`      | Get max simultaneous touches | ✅ Working |
+| Method                     | Description                  |
+|----------------------------|------------------------------|
+| `FastTouch.create(window)` | Initialize touch for window  |
+| `addListener(listener)`    | Add touch event callback     |
+| `removeListener(listener)` | Remove touch event callback  |
+| `start()`                  | Begin touch processing       |
+| `stop()`                   | Stop touch processing        |
+| `isTouchAvailable()`       | Check if touchscreen present |
+| `getMaxTouchPoints()`      | Get max simultaneous touches |
 
 ### FastGesture (Mathematical Engine)
 
