@@ -82,15 +82,13 @@ public class TouchDemo {
 
 ---
 
-## 📦 Installation
+## Installation
 
-FastJava modules require **two** dependencies: the module itself, and `FastCore` (which handles the cross-platform
-native library extraction).
+### Option 1: Maven (Recommended)
 
-### Maven (JitPack)
+Add the JitPack repository and the dependency to your `pom.xml`:
 
 ```xml
-
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -99,23 +97,21 @@ native library extraction).
 </repositories>
 
 <dependencies>
-<!-- 1. The FastTouch Module -->
-<dependency>
-    <groupId>io.github.andrestubbe</groupId>
-    <artifactId>fasttouch</artifactId>
-    <version>0.1.0</version>
-</dependency>
-
-<!-- 2. FastCore (Required for native loading) -->
-<dependency>
-    <groupId>io.github.andrestubbe</groupId>
-    <artifactId>fastcore</artifactId>
-    <version>0.1.0</version>
-</dependency>
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>fasttouch</artifactId>
+        <version>v0.1.0</version>
+    </dependency>
+    <!-- Required Native JNI loader -->
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>fastcore</artifactId>
+        <version>v0.1.0</version>
+    </dependency>
 </dependencies>
 ```
 
-### Gradle (JitPack)
+### Option 2: Gradle (via JitPack)
 
 ```groovy
 repositories {
@@ -123,16 +119,18 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.andrestubbe:fasttouch:0.1.0'
-    implementation 'io.github.andrestubbe:fastcore:0.1.0'
+    implementation 'com.github.andrestubbe:fasttouch:v0.1.0'
+    // Required Native JNI loader
+    implementation 'com.github.andrestubbe:fastcore:v0.1.0'
 }
 ```
 
-### Direct Download / Local
+### Option 3: Direct Download (No Build Tool)
 
-If you don't use Maven or Gradle, download the FatJAR from
-the [Releases](https://github.com/andrestubbe/FastTouch/releases) page. It comes pre-bundled with the native DLL and
-FastCore.
+Download the latest JAR directly to add it to your classpath:
+
+1. 📦 **[fasttouch-v0.1.0.jar](https://github.com/andrestubbe/FastTouch/releases/download/v0.1.0/fasttouch-v0.1.0.jar)** (The Core Library)
+2. 📦 **[fastcore-v0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/v0.1.0/fastcore-v0.1.0.jar)** (Required Native JNI loader)
 
 ---
 
@@ -169,6 +167,16 @@ FastCore.
 * **[PHILOSOPHIE.md](docs/PHILOSOPHIE.md)**: The engineering rationale for zero-allocation performance.
 * **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
 * **[CHANGELOG.md](docs/CHANGELOG.md)**
+
+---
+
+## Platform Support
+
+| Platform      | Status            |
+|---------------|-------------------|
+| Windows 10/11 | ✅ Fully Supported |
+| Linux         | 🚧 Planned |
+| macOS         | 🚧 Planned |
 
 ---
 
