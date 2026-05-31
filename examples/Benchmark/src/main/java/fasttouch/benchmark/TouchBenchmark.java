@@ -3,7 +3,6 @@ package fasttouch.benchmark;
 import fasttouch.FastGesture;
 import fasttouch.FastTouch;
 import fasttouch.FastTouch.TouchPoint;
-import fasttouch.FastTouch.State;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.HashMap;
@@ -32,8 +31,8 @@ public class TouchBenchmark {
 
         touches = new HashMap<>();
         // Simulate two fingers moving
-        touches.put(0, new TouchPoint(0, 100, 100, 128, 10, 10, System.currentTimeMillis(), State.MOVE));
-        touches.put(1, new TouchPoint(1, 200, 200, 128, 10, 10, System.currentTimeMillis(), State.MOVE));
+        touches.put(0, new TouchPoint(0, 100, 100, 128, 10, 10, System.currentTimeMillis(), FastTouch.State.MOVE));
+        touches.put(1, new TouchPoint(1, 200, 200, 128, 10, 10, System.currentTimeMillis(), FastTouch.State.MOVE));
     }
 
     @Benchmark
