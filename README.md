@@ -136,16 +136,28 @@ Download the latest JAR directly to add it to your classpath:
 
 ## 🎯 API Reference
 
-### Core Methods
+### FastTouch Core Methods
 
 | Method                     | Description                  | Status    |
 |----------------------------|------------------------------|-----------|
 | `FastTouch.create(window)` | Initialize touch for window  | ✅ Working |
 | `addListener(listener)`    | Add touch event callback     | ✅ Working |
-| `start()`                  | Begin touch polling          | ✅ Working |
-| `stop()`                   | Stop touch polling           | ✅ Working |
+| `removeListener(listener)` | Remove touch event callback  | ✅ Working |
+| `start()`                  | Begin touch processing       | ✅ Working |
+| `stop()`                   | Stop touch processing        | ✅ Working |
 | `isTouchAvailable()`       | Check if touchscreen present | ✅ Working |
 | `getMaxTouchPoints()`      | Get max simultaneous touches | ✅ Working |
+
+### FastGesture (Mathematical Engine)
+
+A separate utility class, `FastGesture`, is included to translate raw multi-touch data into high-level interactions.
+
+| Callback Method | Description |
+|-----------------|-------------|
+| `onPan`         | 1-Finger drag (provides physics-based torque data) |
+| `onPinchStart`  | 2-Finger gesture initiated |
+| `onPinchUpdate` | 2-Finger scaling, rotation, and distance delta |
+| `onPinchEnd`    | 2-Finger gesture terminated |
 
 ### TouchPoint Fields
 
@@ -163,7 +175,7 @@ Download the latest JAR directly to add it to your classpath:
 ## Documentation
 
 * **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
-* **[REFERENCE.md](REFERENCE.md)**: Full API descriptions, border configurations, and codepoint index.
+* **[REFERENCE.md](docs/REFERENCE.md)**: Full API descriptions, border configurations, and codepoint index.
 * **[PHILOSOPHIE.md](docs/PHILOSOPHIE.md)**: The engineering rationale for zero-allocation performance.
 * **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
 * **[CHANGELOG.md](docs/CHANGELOG.md)**
@@ -188,10 +200,10 @@ MIT License — See [LICENSE](LICENSE) file for details.
 
 ## Related Projects
 - [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader & JNI Utilities for Java
-- [FastMouse](https://github.com/andrestubbe/FastMouse) — High-Performance Native Mouse API for Java
 - [FastHotkey](https://github.com/andrestubbe/FastHotkey) — Low-Latency Global Hotkey API for Java
 - [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — Native Windows RawInput API for Java
 - [FastKeylogger](https://github.com/andrestubbe/FastKeylogger) — Behavioral Typing Logic for Java
+- [FastMouse](https://github.com/andrestubbe/FastMouse) — High-Performance Native Mouse API for Java
 - [FastStylus](https://github.com/andrestubbe/FastStylus) — Native Stylus/Pen Input for Java
 
 ---
