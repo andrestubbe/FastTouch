@@ -10,16 +10,12 @@
 
 **⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
-> **Native multi-touch touchscreen input** via Windows WM_POINTER API. Powered by FastCore.
-
 FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard
 AWT/Swing. Get raw touch data including:
-
 - **Multi-touch** — Track 10+ fingers simultaneously
 - **Pressure sensitivity** — Variable touch force (0-255)
 - **Contact size** — Touch width/height in pixels
 - **Low latency** — Native Windows API, no JVM event queue delays
-
 **Java CANNOT do this.** AWT only provides mouse emulation for touch. FastTouch gives you the real thing.
 
 ---
