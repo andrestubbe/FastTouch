@@ -109,7 +109,7 @@ native library extraction).
 <dependency>
     <groupId>io.github.andrestubbe</groupId>
     <artifactId>fastcore</artifactId>
-    <version>1.0.0</version>
+    <version>0.1.0</version>
 </dependency>
 </dependencies>
 ```
@@ -123,7 +123,7 @@ repositories {
 
 dependencies {
     implementation 'io.github.andrestubbe:fasttouch:0.1.0'
-    implementation 'io.github.andrestubbe:fastcore:1.0.0'
+    implementation 'io.github.andrestubbe:fastcore:0.1.0'
 }
 ```
 
