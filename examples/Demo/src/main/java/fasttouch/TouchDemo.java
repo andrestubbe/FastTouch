@@ -45,6 +45,7 @@ public class TouchDemo extends JPanel {
                     FastTheme.setTitleBarDarkMode(hwnd, true);
                     FastTheme.setTitleBarColor(hwnd, 0, 0, 0);
                     FastTheme.setTitleBarTextColor(hwnd, 255, 255, 255);
+                    FastTheme.setWindowTransparency(hwnd, 224);
                 }
             } catch (Throwable e) {
                 System.err.println("FastTheme dark mode failed: " + e.getMessage());

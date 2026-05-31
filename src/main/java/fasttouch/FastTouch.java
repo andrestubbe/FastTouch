@@ -47,8 +47,8 @@ import java.util.List;
  * <p><b>Platform Support:</b> Windows 8/10/11 only (requires WM_POINTER API).</p>
  * 
  * @author FastJava Team
- * @version 1.1.0
- * @since 1.0.0
+ * @version 0.1.0
+ * @since 0.1.0
  * @see <a href="https://github.com/andrestubbe/FastTouch">GitHub Repository</a>
  */
 public class FastTouch {
