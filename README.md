@@ -208,7 +208,7 @@ MIT License — See [LICENSE](LICENSE) file for details.
 - [FastTheme](https://github.com/andrestubbe/FastTheme) — High-Performance Native Window Styling
 
 ---
-**Part of the FastJava Ecosystem** — *Making the JVM faster.*
+**Part of the FastJava Ecosystem** — *Making the JVM faster. Small package. Maximum speed. Zero bloat. 🚀📋*
 
 
 
