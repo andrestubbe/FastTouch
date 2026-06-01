@@ -18,9 +18,11 @@ AWT/Swing. Get raw touch data including:
 - **Low latency** — Native Windows API, no JVM event queue delays
 **Java CANNOT do this.** AWT only provides mouse emulation for touch. FastTouch gives you the real thing.
 
+[**Watch the Demo**](YOUR_YOUTUBE_LINK_HERE) | [**Watch the JMH Benchmark**](YOUR_YOUTUBE_LINK_HERE)
+
 ---
 
-![FastTouch Multi-Touch Demo](docs/screenshot.png)
+[![FastTouch Showcase](docs/screenshot.png)](YOUR_YOUTUBE_LINK_HERE)
 
 ---
 
