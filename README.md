@@ -28,6 +28,7 @@ AWT/Swing. Get raw touch data including:
 
 - [Quick Start](#quick-start)
 - [Why FastTouch?](#why-fasttouch)
+- [Performance Benchmarks](#performance-benchmarks)
 - [Installation](#-installation)
 - [API Reference](#-api-reference)
 - [Documentation](#documentation)
@@ -79,6 +80,21 @@ public class TouchDemo {
 | Contact Size     | ❌ No                        | ✅ Width/Height in pixels     |
 | Raw Touch Events | ❌ No (synthesized mouse)    | ✅ Native WM_TOUCH/WM_POINTER |
 | Latency          | High (event queue)          | **Native speed**             |
+
+---
+
+## Performance Benchmarks
+
+FastTouch relies on a highly optimized native JNI architecture. The `FastGesture` engine uses zero-allocation loops to process heavy mathematics (Panning, Pinch-to-Zoom, and Rotation vectors) directly from primitive arrays.
+
+In the official [JMH Benchmark](examples/Benchmark), we measure the raw throughput of the gesture mathematics overhead:
+
+```text
+Benchmark                             Mode  Cnt      Score      Error   Units
+TouchBenchmark.benchmarkGestureMath  thrpt    5  15229,163 ± 3349,252  ops/ms
+```
+
+> **~15,200,000 Operations per Second**: `FastGesture` scales, rotates, and translates coordinates with functionally zero latency. Given that a typical touch digitizer polls at 120Hz-240Hz, the Java computational overhead is completely unmeasurable.
 
 ---
 
