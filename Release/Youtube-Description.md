@@ -26,3 +26,6 @@ Check out the other tools:
 - FastTheme (Native Window Styling)
 
 #Java #Programming #MultiTouch #JNI #FastJava #SoftwareEngineering #OpenSource #Performance #WindowsAPI #Swing
+
+**Tags (comma separated for YouTube):**
+Java, Programming, MultiTouch, JNI, FastJava, SoftwareEngineering, OpenSource, Performance, WindowsAPI, Swing

@@ -21,3 +21,6 @@ Discover more:
 - FastTheme (Native Window Styling)
 
 #Java #JMH #Benchmark #Performance #Optimization #MultiTouch #FastJava #SoftwareEngineering #Coding #OpenSource
+
+**Tags (comma separated for YouTube):**
+Java, JMH, Benchmark, Performance, Optimization, MultiTouch, FastJava, SoftwareEngineering, Coding, OpenSource
