@@ -8,6 +8,6 @@ if %ERRORLEVEL% NEQ 0 ( pause & exit /b )
 echo Running Benchmark...
 cd examples\Benchmark
 call mvn -q clean package
-java --sun-misc-unsafe-memory-access=allow -jar target\benchmarks.jar
+java --sun-misc-unsafe-memory-access=allow -jar target\benchmarks.jar -v EXTRA
 cd ..\..
 pause
