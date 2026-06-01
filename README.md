@@ -18,7 +18,7 @@ AWT/Swing. Get raw touch data including:
 - **Low latency** — Native Windows API, no JVM event queue delays
 **Java CANNOT do this.** AWT only provides mouse emulation for touch. FastTouch gives you the real thing.
 
-[**Watch the Demo**](YOUR_YOUTUBE_LINK_HERE) | [**Watch the JMH Benchmark**](YOUR_YOUTUBE_LINK_HERE)
+[**Watch the Demo**](YOUR_YOUTUBE_LINK_HERE) | [**Watch the JMH Benchmark**](https://www.youtube.com/watch?v=SZjW66KoUmo)
 
 ---
 
@@ -88,6 +88,8 @@ public class TouchDemo {
 ## Performance Benchmarks
 
 FastTouch relies on a highly optimized native JNI architecture. The `FastGesture` engine uses zero-allocation loops to process heavy mathematics (Panning, Pinch-to-Zoom, and Rotation vectors) directly from primitive arrays.
+
+[**Watch the JMH Benchmark**](https://www.youtube.com/watch?v=SZjW66KoUmo)
 
 In the official [JMH Benchmark](examples/Benchmark), we measure the raw throughput of the gesture mathematics overhead:
 
