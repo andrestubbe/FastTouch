@@ -22,7 +22,7 @@ AWT/Swing. Get raw touch data including:
 
 ---
 
-[![FastTouch Showcase](docs/screenshot.png)](YOUR_YOUTUBE_LINK_HERE)
+[![FastTouch Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=0DzGtGKu5D4)
 
 ---
 
