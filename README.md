@@ -196,7 +196,7 @@ A separate utility class, `FastGesture`, is included to translate raw multi-touc
 
 * **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
 * **[REFERENCE.md](docs/REFERENCE.md)**: Full API descriptions, border configurations, and codepoint index.
-* **[PHILOSOPHIE.md](docs/PHILOSOPHIE.md)**: The engineering rationale for zero-allocation performance.
+* **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: The engineering rationale for zero-allocation performance.
 * **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
 * **[CHANGELOG.md](docs/CHANGELOG.md)**
 
