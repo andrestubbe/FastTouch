@@ -1,8 +1,7 @@
-﻿@echo off
-chcp 65001 >nul
+@echo off
 
-echo ðŸš€ Running Hero Demo...
+echo [FastTouch] Running Demo (via JitPack)...
 cd examples\Demo
-call mvn -q compile exec:java -Dexec.mainClass=fasttouch.TouchDemo
+call mvn compile exec:java -Dexec.mainClass=fasttouch.TouchDemo
 cd ..\..
 pause
