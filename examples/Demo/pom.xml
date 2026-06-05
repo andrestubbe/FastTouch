@@ -33,24 +33,22 @@
     <dependencies>
         <dependency>
             <groupId>com.github.andrestubbe</groupId>
-            <artifactId>fasttheme</artifactId>
+            <artifactId>FastTheme</artifactId>
             <version>0.1.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.github.andrestubbe</groupId>
-            <artifactId>fastanimation</artifactId>
-            <version>0.1.0</version>
+            <artifactId>FastAnimation</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.github.andrestubbe</groupId>
-            <artifactId>fasttween</artifactId>
-            <version>0.1.0</version>
+            <artifactId>FastTween</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.andrestubbe</groupId>
-            <artifactId>fasttouch</artifactId>
+            <artifactId>FastTouch</artifactId>
             <version>0.1.0</version>
         </dependency>
     </dependencies>
