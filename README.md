@@ -1,4 +1,5 @@
-# FastTouch — Native Touchscreen Input for Java [ALPHA] - v0.1.0
+# FastTouch — Native Touchscreen Input for Java
+ [ALPHA] - v0.1.0
 **⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
@@ -17,6 +18,8 @@ FastTouch provides **hardware-level touchscreen access** for Java applications �
 - **Low latency** — Native Windows API, no JVM event queue delays
 
 **Java CANNOT do this.** AWT only provides mouse emulation for touch. FastTouch gives you the real thing.
+
+Watch Demo (YouTube) | Watch JMH Benchmark (YouTube)
 
 ---
 
