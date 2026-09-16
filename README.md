@@ -158,6 +158,12 @@ Add the JitPack repository and the dependency to your `pom.xml`:
         <artifactId>FastTouch</artifactId>
         <version>0.1.0</version>
     </dependency>
+    <!-- Required Native JNI loader -->
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>FastCore</artifactId>
+        <version>0.1.0</version>
+    </dependency>
 </dependencies>
 ```
 
@@ -170,14 +176,19 @@ repositories {
 
 dependencies {
     implementation 'com.github.andrestubbe:FastTouch:0.1.0'
+    implementation 'com.github.andrestubbe:FastCore:0.1.0'
 }
 ```
 
 ### Option 3: Direct Download (No Build Tool)
 
-Download the latest JAR directly to add to your classpath:
+Download the latest JARs directly to add them to your classpath:
 
-- 📦 **[FastTouch-0.1.0.jar](https://github.com/andrestubbe/FastTouch/releases/tag/0.1.0)** (The Core Library)
+1. 📦 **[FastTouch-0.1.0.jar](https://github.com/andrestubbe/FastTouch/releases/tag/0.1.0)** (The Core Library with embedded native DLL)
+2. ⚙️ **[fastcore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/fastcore-0.1.0.jar)** (The Mandatory Native Loader)
+
+> [!IMPORTANT]
+> All JARs must be in your classpath for the JNI calls to function correctly.
 
 ---
 
