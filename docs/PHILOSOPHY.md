@@ -1,7 +1,7 @@
 # The Philosophy of FastTouch
 
 > [!IMPORTANT]
-> **"Keine Kopien. Niemals. Kritischer JNI-Pfad. Native-First Performance."**
+> **"Zero Copies. Never. Critical JNI Path. Native-First Performance."**
 
 FastTouch is built on the principle that modern touchscreen and pen-enabled Java applications require **hardware-native** digitizer access that standard AWT and Swing architectures fail to expose.
 

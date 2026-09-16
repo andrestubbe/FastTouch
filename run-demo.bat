@@ -1,19 +1,27 @@
 @echo off
-chcp 65001 >nul
+setlocal
 cd /d "%~dp0"
 
-echo ⚡ Building FastTouch...
+echo [1/3] Building FastTouch...
 call mvn clean install -DskipTests -q
-if %ERRORLEVEL% NEQ 0 ( echo ❌ Build failed. & pause & exit /b %ERRORLEVEL% )
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] FastTouch build failed.
+    pause
+    exit /b %ERRORLEVEL%
+)
 
 powershell -NoProfile -Command "Unblock-File -Path '%USERPROFILE%\.fastcore\native\fasttouch\*', '%~dp0src\main\resources\native\*', '%~dp0release\*', '%~dp0out\*' -ErrorAction SilentlyContinue" >nul 2>&1
 
-echo 🛠  Compiling Demo...
+echo [2/3] Compiling Demo...
 cd examples\Demo
-call mvn compile dependency:build-classpath -Dmdep.outputFile=cp.txt -DincludeScope=runtime -q
-if %ERRORLEVEL% NEQ 0 ( echo ❌ Compile failed. & pause & exit /b %ERRORLEVEL% )
+call mvn compile dependency:build-classpath "-Dmdep.outputFile=cp.txt" "-DincludeScope=runtime" -q
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Demo compilation failed.
+    pause
+    exit /b %ERRORLEVEL%
+)
 
-echo 🚀 Running Demo...
+echo [3/3] Running Demo...
 set /p CP=<cp.txt
 java --enable-native-access=ALL-UNNAMED "-Djava.library.path=%~dp0out;%~dp0release;%~dp0src\main\resources\native" -cp "target\classes;%CP%" fasttouch.Demo
 
