@@ -12,7 +12,7 @@
 
 **FastTouch** provides hardware-level touchscreen and multi-touch digitizer access directly from the Win32 Pointer API (`WM_POINTER`), bypassing the single-cursor mouse emulation limitations of standard AWT and Swing. Track 10+ simultaneous fingers, variable pressure force (`0..255`), and exact physical contact patch dimensions with minimal latency.
 
-[**Watch Showcase Demo (YouTube)**](https://youtu.be/0DzGtGKu5D4) | Watch JMH Benchmark (YouTube)
+[**Watch Showcase Demo (YouTube)**](https://youtu.be/0DzGtGKu5D4)
 
 [![FastTouch Multi-Touch Demo](docs/screenshot.png)](https://youtu.be/0DzGtGKu5D4)
 
