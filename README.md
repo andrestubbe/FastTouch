@@ -204,10 +204,11 @@ Download the latest JARs directly to add them to your classpath:
 
 ## Platform Support
 
-| Platform | Status |
-|---|:---:|
-| **Windows 10 / 11 (x64)** | ✅ Fully Supported (Native Win32 `WM_POINTER`) |
-| **Linux / macOS** | 🚧 Planned |
+| Platform | Architecture | Status | Driver / Subsystem |
+|:---|:---:|:---:|:---|
+| **Windows 10 / 11** | x64 | ✅ Fully Supported | Native Win32 `WM_POINTER` Subsystem |
+| **Linux** | x64 / AArch64 | 🚧 Planned | `libinput` / `evdev` Multi-Touch Slots |
+| **macOS** | Apple Silicon / x64 | 🚧 Planned | `NSEvent` & MultitouchSupport Framework |
 
 ---
 
