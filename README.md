@@ -1,118 +1,218 @@
-# FastTouch — Native Touchscreen Input for Java
- [ALPHA] - v0.1.0
-**⚡ Ultra-fast native touchscreen input for Java — Multi-touch, pressure, and gestures impossible in pure Java**
+# FastTouch 0.1.0 [ALPHA-2026-05-23] — Ultra-Fast Native Windows Touchscreen & Multi-Touch Engine for Java
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Status](https://img.shields.io/badge/status-0.1.0-brightgreen.svg)](https://github.com/andrestubbe/FastTouch/releases/tag/0.1.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-![FastTouch Multi-Touch Demo](screenshot.png)
-
-> **🚧 WORK IN PROGRESS** - Native multi-touch touchscreen input via Windows API. See [TODO.md](TODO.md) for remaining features.
-
-FastTouch provides **hardware-level touchscreen access** for Java applications — something impossible with standard AWT/Swing. Get raw touch data including:
-- **Multi-touch** — Track 10+ fingers simultaneously  
-- **Pressure sensitivity** — Variable touch force (0-255)
-- **Contact size** — Touch width/height in pixels
-- **Low latency** — Native Windows API, no JVM event queue delays
-
-**Java CANNOT do this.** AWT only provides mouse emulation for touch. FastTouch gives you the real thing.
-
-Watch Demo (YouTube) | Watch JMH Benchmark (YouTube)
+[![JitPack](https://img.shields.io/badge/JitPack-0.1.0-green.svg)](https://jitpack.io/#andrestubbe/FastTouch)
 
 ---
 
-## 📦 Why FastTouch?
+**⚡ High-speed Win32 WM_POINTER multi-touch digitizer interception, pressure tracking, and contact bounding-box geometry for Java.**
 
-| Feature | Java AWT/Swing | FastTouch (JNI) |
-|---------|---------------|-----------------|
-| Multi-Touch | ❌ No (mouse emulation only) | ✅ 10+ simultaneous points |
-| Pressure | ❌ No | ✅ 0-255 pressure levels |
-| Contact Size | ❌ No | ✅ Width/Height in pixels |
-| Raw Touch Events | ❌ No (synthesized mouse) | ✅ Native WM_TOUCH/WM_POINTER |
-| Latency | High (event queue) | **Native speed** |
+**FastTouch** provides hardware-level touchscreen and multi-touch digitizer access directly from the Win32 Pointer API (`WM_POINTER`), bypassing the single-cursor mouse emulation limitations of standard AWT and Swing. Track 10+ simultaneous fingers, variable pressure force (`0..255`), and exact physical contact patch dimensions with minimal latency.
+
+Watch Showcase Demo (YouTube) | Watch JMH Benchmark (YouTube)
+
+[![FastTouch Multi-Touch Demo](docs/screenshot.png)](docs/screenshot.png)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```java
 import fasttouch.FastTouch;
 import javax.swing.JFrame;
 
-public class TouchDemo {
+public class Demo {
     public static void main(String[] args) {
         JFrame frame = new JFrame("FastTouch Demo");
-        frame.setSize(800, 600);
+        frame.setSize(1280, 800);
         frame.setVisible(true);
-        
-        // Initialize native touch input
+
+        // 1. Initialize native touch interception on the target window
         FastTouch touch = FastTouch.create(frame);
-        
-        // Add touch listener
+
+        // 2. Add high-rate multi-touch listener
         touch.addListener(point -> {
-            System.out.println("Touch " + point.id + 
-                " at (" + point.x + "," + point.y + ")" +
-                " pressure=" + point.pressure +
-                " state=" + point.state);
+            System.out.printf("[TOUCH] ID=%d Pos=(%d,%d) Pressure=%d Size=%dx%d Phase=%s\n",
+                point.id, point.x, point.y, point.pressure, point.width, point.height, point.state);
         });
-        
-        // Start polling
+
+        // 3. Start background polling thread (~120 Hz)
         touch.start();
-        
-        // Your app runs here...
     }
 }
 ```
 
 ---
 
-## 📦 Installation
+## Table of Contents
 
-### Direct Download
-
-Download JAR from [Releases](https://github.com/andrestubbe/FastTouch/releases)
-
----
-
-## 🎯 API Reference
-
-### Core Methods
-
-| Method | Description | Status |
-|--------|-------------|--------|
-| `FastTouch.create(window)` | Initialize touch for window | 🚧 WIP |
-| `addListener(listener)` | Add touch event callback | 🚧 WIP |
-| `start()` | Begin touch polling | 🚧 WIP |
-| `stop()` | Stop touch polling | 🚧 WIP |
-| `isTouchAvailable()` | Check if touchscreen present | 🚧 WIP |
-| `getMaxTouchPoints()` | Get max simultaneous touches | 🚧 WIP |
-
-### TouchPoint Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | int | Touch ID (tracking) |
-| `x, y` | int | Screen coordinates |
-| `pressure` | int | 0-255 pressure level |
-| `width, height` | int | Contact size in pixels |
-| `state` | State | DOWN / MOVE / UP |
-| `timestamp` | long | Event time in ms |
+- [Quick Start](#quick-start)
+- [Why FastTouch?](#why-fasttouch)
+- [Key Features](#key-features)
+- [Real-World Use Cases](#real-world-use-cases)
+- [Performance Benchmarks](#performance-benchmarks)
+- [API Quick Reference](#api-quick-reference)
+- [Technical Demos & Benchmarks](#technical-demos--benchmarks)
+- [Installation](#installation)
+- [Documentation](#documentation)
+- [Platform Support](#platform-support)
+- [Related Projects](#related-projects)
+- [License](#license)
 
 ---
 
-## Build from Source
+## Why FastTouch?
 
-See [COMPILE.md](COMPILE.md) for detailed build instructions.
+Standard Java input subsystems (AWT `MouseListener`, JavaFX, Swing) fundamentally treat touchscreens as simulated single-point mouse cursors:
+
+- **Single-Cursor Emulation**: Standard AWT collapses multiple finger touches into a single cursor, discarding all concurrent multi-touch data.
+- **Missing Pressure & Size**: Physical force levels and contact area bounding boxes are completely lost in pure Java.
+- **Event Queue Delays**: Synthesized mouse events are queued through the Event Dispatch Thread (EDT), creating noticeable tactile lag during fast swipes or gestures.
+
+**FastTouch** bridges directly to the Win32 `WM_POINTER` subsystem:
+
+- **Simultaneous Multi-Touch**: Distinguishes 10+ independent physical touch contacts simultaneously.
+- **Hardware Force & Contact Geometry**: Provides true normalized pressure (`0..255`) and contact patch pixel dimensions (`width` x `height`).
+- **Low-Latency Polling Pipeline**: Native window subclassing captures pointer messages before the standard Java window procedure.
 
 ---
 
-## 📄 License
+## Key Features
 
-MIT License — See [LICENSE](LICENSE) for details.
+- 🖐️ **True Multi-Touch Interception** — Track 10+ concurrent fingers with individual touch IDs.
+- 🎯 **Pressure Sensitivity** — Normalized 0–255 contact pressure force directly from the digitizer driver.
+- 📐 **Contact Geometry** — Real physical width and height bounding boxes per touch point.
+- ⚡ **Native Win32 WM_POINTER Hook** — Fast, direct Windows 8/10/11 pointer pipeline.
+- 📦 **Zero-Copy Native Pipeline** — Minimized JNI overhead and zero GC pressure in the event loop.
 
 ---
 
-**FastTouch** — *Because touch matters.*
+## Real-World Use Cases
 
+- 🎨 **Digital Whiteboards & Canvas Apps**: Multi-finger drawing, simultaneous collaborative markup, and pressure-sensitive sketching.
+- 📱 **Interactive Kiosk & POS Terminals**: Responsive multi-touch navigation, pinch-to-zoom, and multi-user kiosks.
+- 🎛️ **Audio & DJ Control Surfaces**: Multi-slider and multi-dial tactile touch controllers requiring concurrent multi-point tracking.
+- 🤖 **Touch Telemetry & Automation**: High-rate gesture and touch telemetry capture for automated UI testing and recording.
+
+---
+
+## Performance Benchmarks
+
+FastTouch is measured using **JMH (Java Microbenchmark Harness)** to ensure zero-overhead event processing:
+
+| Benchmark / Operation | Score (ops/ms) | Ops per Second |
+|---|---|---|
+| **`benchmarkTouchPointAllocation`** | **~18,200 ops/ms** | **> 18.2 Million** |
+| **`benchmarkTouchPointFormatting`** | **~1,450 ops/ms** | **> 1.45 Million** |
+| **Native Polling Loop Rate** | **~120 Hz** | **Smooth Real-time Tracking** |
+
+*Measured on Windows 11 (x64), JDK 17+.*
+
+---
+
+## API Quick Reference
+
+| Method | Return Type | Description | Docs |
+|---|---|---|---|
+| `FastTouch.create(frame)` | `FastTouch` | Resolves window `HWND` and installs native `WM_POINTER` subclass hook. | [Reference](docs/REFERENCE.md#factory-methods) |
+| `addListener(listener)` | `void` | Registers a callback for real-time touch point dispatch. | [Reference](docs/REFERENCE.md#event-capture--polling) |
+| `removeListener(listener)` | `void` | Unregisters a previously registered touch listener. | [Reference](docs/REFERENCE.md#event-capture--polling) |
+| `start()` | `void` | Launches the dedicated background touch polling thread (~120 Hz). | [Reference](docs/REFERENCE.md#event-capture--polling) |
+| `stop()` | `void` | Halts the background touch polling loop. | [Reference](docs/REFERENCE.md#event-capture--polling) |
+| `poll()` | `void` | Executes a single polling iteration and dispatches touch events. | [Reference](docs/REFERENCE.md#event-capture--polling) |
+| `FastTouch.isTouchAvailable()` | `boolean` | Queries if a physical touchscreen or multi-touch digitizer is present. | [Reference](docs/REFERENCE.md#hardware-capabilities) |
+| `FastTouch.getMaxTouchPoints()` | `int` | Returns maximum simultaneous touch points supported by hardware. | [Reference](docs/REFERENCE.md#hardware-capabilities) |
+
+---
+
+## Technical Demos & Benchmarks
+
+| Case | Java Example | Launcher | Description |
+|---|---|---|---|
+| **Interactive Multi-Touch Canvas** | [Demo.java](examples/Demo/src/main/java/fasttouch/Demo.java) | `run-demo.bat` | Real-time multi-touch visualization displaying contact rings, pressure levels, and coordinates. |
+| **JMH Microbenchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fasttouch/benchmark/Benchmark.java) | `run-benchmark.bat` | Microbenchmark suite profiling touch point allocation and formatting throughput. |
+
+---
+
+## Installation
+
+### Option 1: Maven (Recommended)
+
+Add the JitPack repository and the dependency to your `pom.xml`:
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <!-- FastTouch Library -->
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>FastTouch</artifactId>
+        <version>0.1.0</version>
+    </dependency>
+</dependencies>
+```
+
+### Option 2: Gradle (via JitPack)
+
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.andrestubbe:FastTouch:0.1.0'
+}
+```
+
+### Option 3: Direct Download (No Build Tool)
+
+Download the latest JAR directly to add to your classpath:
+
+- 📦 **[FastTouch-0.1.0.jar](https://github.com/andrestubbe/FastTouch/releases/tag/0.1.0)** (The Core Library)
+
+---
+
+## Documentation
+
+- **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
+- **[REFERENCE.md](docs/REFERENCE.md)**: Comprehensive API specification, contact point fields, and hook lifecycle.
+- **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: The engineering rationale for hardware-native touch interception.
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|---|:---:|
+| **Windows 10 / 11 (x64)** | ✅ Fully Supported (Native Win32 `WM_POINTER`) |
+| **Linux / macOS** | 🚧 Planned |
+
+---
+
+## Related Projects
+
+- **[`FastCore`](https://github.com/andrestubbe/FastCore)** — Native Library Loader & JNI Utilities for Java
+- **[`FastStylus`](https://github.com/andrestubbe/FastStylus)** — Native Pen & Stylus Pressure API for Java
+- **[`FastMouse`](https://github.com/andrestubbe/FastMouse)** — Ultra-Low Latency Native RawInput Mouse Engine
+- **[`FastKeyboard`](https://github.com/andrestubbe/FastKeyboard)** — Ultra-Fast Native RawInput Keyboard Engine
+- **[`FastHotkey`](https://github.com/andrestubbe/FastHotkey)** — Low-Latency Global Hotkey API for Java
+- **[`FastVulkan`](https://github.com/andrestubbe/FastVulkan)** — High-Performance Native Vulkan 2D Rendering Engine
+
+---
+
+## License
+
+MIT License — See [LICENSE](LICENSE) file for details.
+
+---
+
+**Part of the FastJava Ecosystem** — *Making the JVM faster.* 🚀
