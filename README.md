@@ -197,6 +197,8 @@ Download the latest JARs directly to add them to your classpath:
 - **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
 - **[REFERENCE.md](docs/REFERENCE.md)**: Comprehensive API specification, contact point fields, and hook lifecycle.
 - **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: The engineering rationale for hardware-native touch interception.
+- **[ROADMAP.md](docs/ROADMAP.md)**: Planned milestone features and performance extensions.
+- **[CHANGELOG.md](docs/CHANGELOG.md)**: Complete version history and release notes.
 
 ---
 
